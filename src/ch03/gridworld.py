@@ -3,7 +3,7 @@ from contextlib import closing
 from io import StringIO
 
 import numpy as np
-from gymnasium.envs.toy_text import cliffwalking
+from gym.envs.toy_text import discrete
 
 # actions の定義
 UP = 0
@@ -11,13 +11,7 @@ RIGHT = 1
 DOWN = 2
 LEFT = 3
 
-class GridworldEnv(cliffwalking.CliffWalkingEnv):
-    """_summary_
-
-    
-    Args:
-        discrete (_type_): _description_
-    """
+class GridworldEnv(discrete.DiscreteEnv):
     
     metadata = {'render.modes': ['human', 'ansi']}
     
@@ -31,12 +25,12 @@ class GridworldEnv(cliffwalking.CliffWalkingEnv):
             position = np.unravel_index(s, self.shape)
             P[s] = {a: [] for a in range(self.nA)}
             P[s][UP] = self._transition_prob(position, [-1, 0])
-            P[s][RIGHT] = self._trainsition_prob(position, [0, 1])
+            P[s][RIGHT] = self._transition_prob(position, [0, 1])
             P[s][DOWN] = self._transition_prob(position, [1, 0])
             P[s][LEFT] = self._transition_prob(position, [0, -1])
             
         # 初期の state の分布は一様分布 (uniform)
-        isd = np.ones(self.nS) / slef.nS
+        isd = np.ones(self.nS) / self.nS
         
         # 動的なプログラミングのための環境モデルを公開する
         # モデルフリー学習アルゴリズムには使われないでしょう
@@ -61,7 +55,7 @@ class GridworldEnv(cliffwalking.CliffWalkingEnv):
             return [(1.0, current_state, 0, True)]
         
         new_position = np.array(current) + np.array(delta)
-        new_position = self._limit_coordinates(new_position).astype(int)
+        new_position = self._limit_coodinates(new_position).astype(int)
         new_state = np.ravel_multi_index(tuple(new_position), self.shape)
         
         is_done = new_state == 0 or new_state == self.nS - 1

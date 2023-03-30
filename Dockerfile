@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.8
 USER root
 
 RUN apt-get update
@@ -17,5 +17,5 @@ COPY requirements.txt /root/src
 WORKDIR /root/src
 
 RUN pip install --upgrade pip
-RUN pip install --upgrade setuptools
+RUN pip install setuptools==65.5.0
 RUN pip install -r requirements.txt

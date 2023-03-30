@@ -16,3 +16,5 @@ docker-compose up -d
 
 - [Docker と Docker Compose で Python の実行環境を作成する](https://zuma-lab.com/posts/docker-python-settings)
 - [docker の python コンテナをビルドしなおさず pip install でライブラリを更新できるようにする方法](https://asukiaaa.blogspot.com/2020/07/docker-python-pip-install-without-rebuilding.html)
+- [gym 0.21 がインストールできない](https://github.com/openai/gym/issues/3176)
+  - setuptools のバージョンが原因

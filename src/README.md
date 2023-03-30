@@ -8,5 +8,5 @@ python src/ch02/marcov.py
 
 
 ### 3章
-python src/ch03/gridworld.py
+python src/ch03/sample02.py
 ```
