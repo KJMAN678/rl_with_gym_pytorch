@@ -3,7 +3,8 @@ from contextlib import closing
 from io import StringIO
 
 import numpy as np
-from gym.envs.toy_text import discrete
+# from gym.envs.toy_text import discrete
+from gymnasium.envs.toy_text import frozen_lake
 
 # actions の定義
 UP = 0
@@ -11,7 +12,8 @@ RIGHT = 1
 DOWN = 2
 LEFT = 3
 
-class GridworldEnv(discrete.DiscreteEnv):
+# class GridworldEnv(discrete.DiscreteEnv):
+class GridworldEnv(frozen_lake.FrozenLakeEnv):
     
     metadata = {'render.modes': ['human', 'ansi']}
     
