@@ -33,12 +33,11 @@ class GridworldEnv(cliffwalking.CliffWalkingEnv):
             P[s][LEFT] = self._transition_prob(position, [0, -1])
 
         # 初期の state の分布は一様分布 (uniform)
-        isd = np.ones(self.nS) / self.nS
+        self.initial_state_distrib = np.ones(self.nS) / self.nS
 
         # 動的なプログラミングのための環境モデルを公開する
         # モデルフリー学習アルゴリズムには使われないでしょう
         self.P = P
-        self.initial_state_distrib = isd
 
     def _limit_coodinates(self, coord):
         coord[0] = min(coord[0], self.shape[0] - 1)

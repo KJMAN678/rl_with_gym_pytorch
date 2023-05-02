@@ -1,7 +1,7 @@
 ```sh
 # SOROBAN nvd5-1l22ul Ubuntu22.04 Python 3.10.6
 # 環境作成スクリプト
-bash create_python310_env.sh
+bash create_python38_env_for_soroban.sh
 
 # pyenv の環境変数設定
 nano ~/.bashrc
@@ -34,18 +34,6 @@ python3 -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-
-```sh
-# Docker イメージ作成
-docker-compose build
-
-# Docker イメージの確認
-docker images
-
-# コンテナ起動
-docker-compose up -d
-```
-
 - [Book:Deep Reinforcement Learning with Python: With PyTorch, TensorFlow and OpenAI Gym](https://www.amazon.co.jp/dp/B091K32T2B)
 - [GitHub](https://github.com/Apress/deep-reinforcement-learning-python)
 
@@ -55,5 +43,5 @@ docker-compose up -d
 - [docker の python コンテナをビルドしなおさず pip install でライブラリを更新できるようにする方法](https://asukiaaa.blogspot.com/2020/07/docker-python-pip-install-without-rebuilding.html)
 - [gym 0.21 がインストールできない](https://github.com/openai/gym/issues/3176)
   - setuptools のバージョンが原因
-- [【Linux】Ubuntu 22.10(Kinetic Kudu)にpyenvをインストールし環境構築する
-](https://namileriblog.com/linux/ubuntu_pyenv/#i-3)
+- [【Linux】Ubuntu 22.10(Kinetic Kudu)に pyenv をインストールし環境構築する
+  ](https://namileriblog.com/linux/ubuntu_pyenv/#i-3)

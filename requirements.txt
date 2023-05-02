@@ -2,3 +2,7 @@ pygame==2.3.0
 gym==0.22.0
 seaborn==0.12.2
 numpy==1.23.1
+black
+mypy
+isort
+flake8
