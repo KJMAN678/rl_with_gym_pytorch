@@ -4,7 +4,8 @@
 - Python 3.8.16
 
 ```sh
-# SOROBAN 環境作成スクリプト
+- SOROBAN用の初回のみ、環境構築
+# SOROBAN 環境作成スクリプトを実行
 bash create_python38_env_for_soroban.sh
 
 # pyenv の環境変数設定
