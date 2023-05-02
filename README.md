@@ -4,10 +4,14 @@
 bash create_python310_env.sh
 
 # pyenv の環境変数設定
-vi ~/.zshrc
-export PYENV_ROOT="$HOME/.pyenv"
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
+nano ~/.bashrc
+
+# 以下を書き込み
+PYENV_ROOT="${HOME}/.pyenv"
+PATH="${PYENV_ROOT}/bin:${PATH}"
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+fi
 # 再起動
 exec $SHELL
 

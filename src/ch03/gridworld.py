@@ -3,8 +3,7 @@ from contextlib import closing
 from io import StringIO
 
 import numpy as np
-# from gym.envs.toy_text import discrete
-from gymnasium.envs.toy_text import frozen_lake
+from gym.envs.toy_text import cliffwalking
 
 # actions の定義
 UP = 0
@@ -13,7 +12,7 @@ DOWN = 2
 LEFT = 3
 
 # class GridworldEnv(discrete.DiscreteEnv):
-class GridworldEnv(frozen_lake.FrozenLakeEnv):
+class GridworldEnv(cliffwalking.CliffWalkingEnv):
     
     metadata = {'render.modes': ['human', 'ansi']}
     
@@ -37,7 +36,9 @@ class GridworldEnv(frozen_lake.FrozenLakeEnv):
         # 動的なプログラミングのための環境モデルを公開する
         # モデルフリー学習アルゴリズムには使われないでしょう
         self.P = P
-        super(GridworldEnv, self).__init__(self.nS, self.nA, P, isd)
+        super(GridworldEnv, self).__init__(
+            # self.nS, self.nA, P, isd
+            )
         
     def _limit_coodinates(self, coord):
         
