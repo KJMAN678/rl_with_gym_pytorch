@@ -25,6 +25,10 @@ pyenv install 3.8.16
 
 # Python 3.8.16 に変更
 pyenv local 3.8.16
+```
+
+```sh
+- Mac / SOROBAN 共通 仮想環境の構築
 
 # 仮想環境の作成
 python3 -m venv .venv
