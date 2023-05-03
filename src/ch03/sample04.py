@@ -54,7 +54,7 @@ def value_iteration(env, discount_factor=1.0, theta=0.00001):
                 max_val = elem
         return max_idx
 
-    optimal_policy = np.zeros([env.nS])
+    optimal_policy = np.zeros([env.nS, env.nA])
     V = np.zeros(env.nS)
     V_new = np.copy(V)
 
@@ -64,7 +64,7 @@ def value_iteration(env, discount_factor=1.0, theta=0.00001):
         for s in range(env.nS):
             q = np.zeros(env.nA)
             # 次に取りうる行動を見る
-            for a in range(env.A):
+            for a in range(env.nA):
                 # 行動ごとに、次の取りうる状態を見る
                 # q[s, a] を計算する
                 for prob, next_state, reward, done in env.P[s][a]:
@@ -87,12 +87,33 @@ def value_iteration(env, discount_factor=1.0, theta=0.00001):
 
     # V(s) は最適値を持つ。これらの価値と最適な方策を計算するためのバックアップステップを使う
     for s in range(env.nS):
-        q = np.zeros(env.nS)
+        q = np.zeros(env.nA)
         # とりうる次の行動を見る
         for a in range(env.nA):
             # q[s, a] を計算するために、各行動ごとに、とりうる各状態をみる
             for prob, next_state, reward, done in env.P[s][a]:
+                # バックアップダイアグラムごとに各行動の価値を計算する
+                if not done:
+                    q[a] += prob * (reward + discount_factor * V[next_state])
+                else:
+                    q[a] += prob * reward
+        # 最適な行動を探索する
+        # 最大値に等しい行動を全て等しい確率で行う確率論的方策を返す。
+        best_actions = argmax_a(q)
+        optimal_policy[s, best_actions] = 1.0 / len(best_actions)
+
+    return optimal_policy, V
+
 
 if __name__ == "__main__":
     sns.set()
     env = GridworldEnv()
+
+    # グリッド上で反復方策を実行
+    pi_star, V_star = value_iteration(env)
+
+    # 最適な方策を出力
+    print("Optimal Policy\n", pi_star)
+
+    # 最適な状態価値を出力する
+    grid_print(V_star.reshape(env.shape))
