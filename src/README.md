@@ -1,16 +1,16 @@
 ```sh
 ### 2章 マルコフ決定課程
 # Gym サンプル MountainCar-v0
-python src/ch02/sample_gym.py
+python3 src/ch02/sample_gym.py
 
 # マルコフ決定のサンプルコード
-python src/ch02/marcov.py
+python3 src/ch02/marcov.py
 
 
 ### 3章 動的計画法
-python src/ch03/dp01.py
+python3 src/ch03/dp01.py
 
-python src/ch03/dp02.py
+python3 src/ch03/dp02.py
 ```
 
 - 結論
@@ -21,7 +21,7 @@ python src/ch03/dp02.py
 - つまり、状態の値は、その状態と最も近い終端状態との間のマンハッタン距離の負値である。
 
 ```sh
-python src/ch03/dp03.py
+python3 src/ch03/dp03.py
 ```
 
 - 結論
@@ -34,7 +34,7 @@ python src/ch03/dp03.py
 # ４章 モデルフリー
 
 ```sh
-python src/ch04/mc.py
+python3 src/ch04/mc.py
 ```
 
 - 結論
@@ -42,7 +42,7 @@ python src/ch04/mc.py
 - しかし、10,000 エピソードのシミュレーションでは、DP による政策評価を行った list3_2 で見た値と一致し、非常によく収束しています。
 
 ```sh
-python src/ch04/glie.py
+python3 src/ch04/glie.py
 ```
 
 - 結論
@@ -53,7 +53,7 @@ python src/ch04/glie.py
 - 最初の 100-1000 エピソードは ε=0.05 とかにして、その後 ε を 1/k にするのがいいかもしれません。
 
 ```sh
-python src/ch04/sarsa.py
+python3 src/ch04/sarsa.py
 ```
 
 - 結論
@@ -61,3 +61,7 @@ python src/ch04/sarsa.py
 - 学習した方針は、崖を避けるために、まず上まで行き、それから右折してゴールに向かって歩くというものである。
 - これは、エージェントが崖を乗り越えてゴールに到達する方針を学習すると予想されたからで、エージェントが学習した方針と比較して 4 歩短い最短経路となる。
 - しかし、ε-greedy を用いた探索を続けているため、エージェントが崖に近づいたときに、ランダムな行動をとって崖に落ちてしまう可能性が常に少なからずあります。これは、環境について十分に学習した後でも探索を続けるという問題、すなわち、同じ ε-greedy 政策が改善のためのサンプリングにも用いられるという問題を示しています。
+
+```sh
+python3 src/ch04/q_learning.py
+```
