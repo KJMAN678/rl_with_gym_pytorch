@@ -8,9 +8,9 @@ python src/ch02/marcov.py
 
 
 ### 3章 動的計画法
-python src/ch03/sample02.py
+python src/ch03/dp01.py
 
-python src/ch03/sample03.py
+python src/ch03/dp02.py
 ```
 
 - 結論
@@ -21,7 +21,7 @@ python src/ch03/sample03.py
 - つまり、状態の値は、その状態と最も近い終端状態との間のマンハッタン距離の負値である。
 
 ```sh
-python src/ch03/sample04.py
+python src/ch03/dp03.py
 ```
 
 - 結論

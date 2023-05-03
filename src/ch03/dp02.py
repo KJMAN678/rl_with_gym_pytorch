@@ -3,7 +3,8 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from gridworld import GridworldEnv
+
+from ..gridworld import GridworldEnv
 
 
 def grid_print(V, k=None):
