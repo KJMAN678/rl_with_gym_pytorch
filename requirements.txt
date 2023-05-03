@@ -1,8 +1,9 @@
 pygame==2.3.0
 gym==0.22.0
+gymnasium==0.28.1
 seaborn==0.12.2
 numpy==1.23.1
-black
-mypy
-isort
-flake8
+black==23.3.0
+mypy==1.2.0
+isort==5.12.0
+flake8==6.0.0

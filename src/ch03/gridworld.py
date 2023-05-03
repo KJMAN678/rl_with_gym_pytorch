@@ -3,7 +3,9 @@ from contextlib import closing
 from io import StringIO
 
 import numpy as np
-from gym.envs.toy_text import cliffwalking
+
+# from gym.envs.toy_text import cliffwalking
+from gymnasium.envs.toy_text import cliffwalking
 
 # actions の定義
 UP = 0

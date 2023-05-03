@@ -12,6 +12,7 @@ python src/ch03/sample02.py
 
 python src/ch03/sample03.py
 
+python src/ch03/sample04.py
 ```
 
 - 結論
