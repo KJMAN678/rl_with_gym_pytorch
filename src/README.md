@@ -1,5 +1,5 @@
 ```sh
-### 2章
+### 2章 マルコフ決定課程
 # Gym サンプル MountainCar-v0
 python src/ch02/sample_gym.py
 
@@ -7,7 +7,7 @@ python src/ch02/sample_gym.py
 python src/ch02/marcov.py
 
 
-### 3章
+### 3章 動的計画法
 python src/ch03/sample02.py
 
 python src/ch03/sample03.py
@@ -30,3 +30,9 @@ python src/ch03/sample04.py
 - いくつかの状態では、複数のアクションが同じステップ数でターミナル状態に到達する可能性があります。
 - 例えば、右上の状態を value=-3 とすると、左上の終端状態にも右下の終端状態にも 3 ステップで到達することになる。
 - つまり、状態の値は、その状態と最も近い終端状態との間のマンハッタン距離の負値である。
+
+# ４章 モデルフリー
+
+```sh
+
+```
