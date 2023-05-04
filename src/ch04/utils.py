@@ -14,6 +14,21 @@ def plot_rewards(env_name, rewards, label):
     plt.show()
 
 
+def plot_rewards_compare(env_name, rewards, labels):
+    """
+    複数の報酬を可視化
+    """
+    for i in range(len(rewards)):
+        reward_list = rewards[i]
+        label = labels[i] + f".mean={np.mean(reward_list[-20])}"
+        plt.title(f"env={env_name}")
+        plt.plot(rewards[i], label=label)
+    plt.grid()
+    plt.legend()
+    plt.ylim(-300, 0)
+    plt.show()
+
+
 def print_policy(env, agent):
     """CliffWorldの方策を出力するためのヘルパー関数"""
     nR, nC = env._cliff.shape
