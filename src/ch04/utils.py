@@ -10,7 +10,7 @@ def plot_rewards(env_name, rewards, label):
     plt.plot(rewards, label=label)
     plt.grid()
     plt.legend()
-    plt.ylim(-300, 0)
+    # plt.ylim(-300, 300)
     plt.show()
 
 
