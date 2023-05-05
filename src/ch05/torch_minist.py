@@ -52,6 +52,8 @@ def main():
     device = (
         torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     )
+    
+    print(device)
 
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize(0.5, 0.5)]
@@ -122,9 +124,9 @@ def main():
             if step % eval_freq == 0:
                 accuracy = 0
                 for ii, (images, labels) in enumerate(testloader):
-                    images = images.resize_(images.size()[0], 784)
+                    images = images.resize_(images.size()[0], 784).to(device)
                     predicted = model.predict(images).data
-                    equality = labels == predicted.max(1)[1]
+                    equality = labels.to(device) == predicted.max(1)[1]
                     accuracy += equality.type_as(torch.FloatTensor()).mean()
 
                 print(
@@ -134,11 +136,11 @@ def main():
                 )
                 running_loss = 0
 
-    logits = model.forward(img[None,]).to("cpu")
+    logits = model.forward(img[None,].to(device))
 
     prediction = F.softmax(logits, dim=1)
 
-    view_classification(img.reshape(1, 28, 28), prediction[0])
+    view_classification(img.to('cpu').reshape(1, 28, 28), prediction[0].to('cpu'))
 
 
 if __name__ == "__main__":
