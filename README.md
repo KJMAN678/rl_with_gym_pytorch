@@ -22,10 +22,10 @@ fi
 exec $SHELL
 
 # pyenv で Python 3.8.16 をインストール
-pyenv install 3.8.16
+pyenv install 3.10.11
 
 # Python 3.8.16 に変更
-pyenv local 3.8.16
+pyenv local 3.10.11
 ```
 
 ```sh

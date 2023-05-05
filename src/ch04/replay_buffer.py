@@ -1,4 +1,8 @@
+import os
+import sys
 from collections import defaultdict
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
