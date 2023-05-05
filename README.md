@@ -1,7 +1,7 @@
 ## 開発環境
 
 - M1 Mac Venture 13.3.1(a) / SOROBAN nvd5-1ub Ubuntu18.04
-- Python 3.8.16
+- Python 3.10.11
 
 ```sh
 - SOROBAN用の初回のみ、環境構築
