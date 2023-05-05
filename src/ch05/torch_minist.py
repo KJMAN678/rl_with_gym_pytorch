@@ -43,7 +43,9 @@ def view_classification(img, probs):
     ax2.set_yticklabels(np.arange(10).astype(int), size="large")
     ax2.set_title("Probability")
     ax2.set_xlim(0, 1.1)
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
 
 def main():
@@ -72,7 +74,9 @@ def main():
 
     plt.title(str(images.size()))
     plt.imshow(images[10].numpy().squeeze(), cmap="Greys_r")
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
     model = NN()
 
