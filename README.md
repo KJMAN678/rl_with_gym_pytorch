@@ -57,3 +57,5 @@ pip install -r requirements.txt
   - setuptools のバージョンが原因
 - [【Linux】Ubuntu 22.10(Kinetic Kudu)に pyenv をインストールし環境構築する
   ](https://namileriblog.com/linux/ubuntu_pyenv/#i-3)
+- [how to solve module 'gym.wrappers' has no attribute 'Monitor'？](https://stackoverflow.com/questions/71411045/how-to-solve-module-gym-wrappers-has-no-attribute-monitor)
+- [OpenCV を使用して Python で動画（ビデオ）を再生する](https://laboratory.kazuuu.net/play-video-in-python-using-opencv/)

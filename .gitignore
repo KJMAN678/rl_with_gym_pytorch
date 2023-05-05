@@ -2,3 +2,5 @@ DS_store
 __pycache__/
 .python-version
 .venv/
+*.mp4
+*.json
