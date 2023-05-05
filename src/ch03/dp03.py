@@ -24,7 +24,9 @@ def grid_print(V, k=None):
         ax.set(title=f"State values after K = {k}.")
     else:
         ax.set(title="State Values.")
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
 
 def value_iteration(env, discount_factor=1.0, theta=0.00001):

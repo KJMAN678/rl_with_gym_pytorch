@@ -183,7 +183,9 @@ if __name__ == "__main__":
     env.reset()
     plt.title("Mountain Car Environment")
     plt.imshow(env.render())
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
     env.close()
 
     # n-SARSA学習エージェントを作成

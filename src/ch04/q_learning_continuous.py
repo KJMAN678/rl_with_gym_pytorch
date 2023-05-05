@@ -81,7 +81,9 @@ if __name__ == "__main__":
     env.reset()
     print("Cart Pole Environment")
     plt.imshow(env.render())
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
     # Cart Poleの環境を作る .envを使用すると、200ステップの時間制限の終了が解除されます。
     env = gym.make("CartPole-v1").env

@@ -64,7 +64,9 @@ def grid_print(V, k=None):
     )
     if k:
         ax.set(title=f"K = {k}")
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
 
 def policy_eval_withprint(policy, env, discount_factor=1.0, theta=0.00001, print_at=[]):

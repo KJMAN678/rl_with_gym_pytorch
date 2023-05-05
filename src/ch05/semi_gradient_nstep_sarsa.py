@@ -127,7 +127,9 @@ if __name__ == "__main__":
     np.random.seed(13)
     env.reset()
     plt.imshow(env.render())
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
     # n-SARSA学習のエージェントを作成する
     step_size = 0.8

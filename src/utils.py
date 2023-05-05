@@ -10,8 +10,9 @@ def plot_rewards(env_name, rewards, label):
     plt.plot(rewards, label=label)
     plt.grid()
     plt.legend()
-    # plt.ylim(-300, 300)
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
 
 def plot_rewards_compare(env_name, rewards, labels):
@@ -25,8 +26,9 @@ def plot_rewards_compare(env_name, rewards, labels):
         plt.plot(rewards[i], label=label)
     plt.grid()
     plt.legend()
-    plt.ylim(-300, 0)
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
 
 def print_policy(env, agent):

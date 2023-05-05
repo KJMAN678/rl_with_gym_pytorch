@@ -177,7 +177,9 @@ def grid_print(
     )
     if k:
         ax.set(title=f"K = {k}")
-    plt.show()
+    plt.show(block=False)
+    plt.pause(2)
+    plt.close()
 
 
 if __name__ == "__main__":
