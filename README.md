@@ -6,11 +6,12 @@
 ```sh
 - SOROBAN用の初回のみ、環境構築
 # SOROBAN 環境作成スクリプトを実行
-bash create_python38_env_for_soroban.sh
+bash create_python310_env_for_soroban.sh
 
 # pyenv の環境変数設定
 nano ~/.bashrc
 
+# 不要かも？
 # 以下を .bashrc に書き込む
 PYENV_ROOT="${HOME}/.pyenv"
 PATH="${PYENV_ROOT}/bin:${PATH}"
@@ -20,6 +21,15 @@ fi
 
 # 再起動
 exec $SHELL
+# 不要かも？
+
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
+
+source ~/.bashrc
+
+https://qiita.com/seigot/items/dc63ed75e6a46f1accab
 
 # pyenv で Python 3.8.16 をインストール
 pyenv install 3.10.11
