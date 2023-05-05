@@ -1,3 +1,4 @@
+import os
 import time
 
 import matplotlib.pyplot as plt
@@ -49,12 +50,17 @@ def view_classification(img, probs):
 
 
 def main():
+    
+    torch.backends.cudnn.benchmark = True
     device = (
         torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     )
-    
     print(device)
-
+    # 高速化のためのDataLoader の設定
+    BATCH_SIZE = 512
+    NUM_WORKERS = os.cpu_count()
+    HAS_PIN_MEMORY = True
+    
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize(0.5, 0.5)]
     )
@@ -64,12 +70,16 @@ def main():
     trainset = datasets.MNIST(
         MNIST_data_path, download=True, train=True, transform=transform
     )
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE,
+                                              shuffle=True, num_workers=NUM_WORKERS, 
+                                              pin_memory=HAS_PIN_MEMORY)
 
     testset = datasets.MNIST(
         MNIST_data_path, download=True, train=False, transform=transform
     )
-    testloader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=True)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE,
+                                             shuffle=True, num_workers=NUM_WORKERS, 
+                                             pin_memory=HAS_PIN_MEMORY)
 
     data_iter = iter(trainloader)
     images, labels = next(data_iter)
@@ -95,7 +105,7 @@ def main():
     view_classification(img.view(1, 28, 28), prediction[0])
 
     # 逆伝播の実行
-    model = NN().to(device)
+    model = NN().to(device, non_blocking=True)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     loss_fn = nn.CrossEntropyLoss()
 
@@ -109,8 +119,8 @@ def main():
             step += 1
             images.resize_(images.size()[0], 784)
 
-            images = images.to(device)
-            labels = labels.to(device)
+            images = images.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
 
             optimizer.zero_grad()
 
@@ -124,9 +134,9 @@ def main():
             if step % eval_freq == 0:
                 accuracy = 0
                 for ii, (images, labels) in enumerate(testloader):
-                    images = images.resize_(images.size()[0], 784).to(device)
+                    images = images.resize_(images.size()[0], 784).to(device, non_blocking=True)
                     predicted = model.predict(images).data
-                    equality = labels.to(device) == predicted.max(1)[1]
+                    equality = labels.to(device, non_blocking=True) == predicted.max(1)[1]
                     accuracy += equality.type_as(torch.FloatTensor()).mean()
 
                 print(
@@ -136,7 +146,7 @@ def main():
                 )
                 running_loss = 0
 
-    logits = model.forward(img[None,].to(device))
+    logits = model.forward(img[None,].to(device, non_blocking=True))
 
     prediction = F.softmax(logits, dim=1)
 
