@@ -50,36 +50,27 @@ def view_classification(img, probs):
 
 
 def main():
-    
     torch.backends.cudnn.benchmark = True
-    device = (
-        torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-    )
+    device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     print(device)
     # 高速化のためのDataLoader の設定
     BATCH_SIZE = 512
     NUM_WORKERS = os.cpu_count()
     HAS_PIN_MEMORY = True
-    
-    transform = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize(0.5, 0.5)]
-    )
+
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(0.5, 0.5)])
 
     MNIST_data_path = "src/ch05/MNIST_data/"
 
-    trainset = datasets.MNIST(
-        MNIST_data_path, download=True, train=True, transform=transform
+    trainset = datasets.MNIST(MNIST_data_path, download=True, train=True, transform=transform)
+    trainloader = torch.utils.data.DataLoader(
+        trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=HAS_PIN_MEMORY
     )
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE,
-                                              shuffle=True, num_workers=NUM_WORKERS, 
-                                              pin_memory=HAS_PIN_MEMORY)
 
-    testset = datasets.MNIST(
-        MNIST_data_path, download=True, train=False, transform=transform
+    testset = datasets.MNIST(MNIST_data_path, download=True, train=False, transform=transform)
+    testloader = torch.utils.data.DataLoader(
+        testset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=HAS_PIN_MEMORY
     )
-    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE,
-                                             shuffle=True, num_workers=NUM_WORKERS, 
-                                             pin_memory=HAS_PIN_MEMORY)
 
     data_iter = iter(trainloader)
     images, labels = next(data_iter)
@@ -150,7 +141,7 @@ def main():
 
     prediction = F.softmax(logits, dim=1)
 
-    view_classification(img.to('cpu').reshape(1, 28, 28), prediction[0].to('cpu'))
+    view_classification(img.to("cpu").reshape(1, 28, 28), prediction[0].to("cpu"))
 
 
 if __name__ == "__main__":
