@@ -17,3 +17,7 @@ torchvision==0.13.1; sys_platform == 'darwin'
 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu116 sys_platform == 'linux'
 torchaudio==0.12.1; sys_platform == 'darwin'
 scipy==1.10.1
+AutoROM.accept-rom-license==0.6.1
+autorom==0.4.2
+ale_py==0.8.1
+shimmy==0.2.1

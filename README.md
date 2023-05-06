@@ -58,3 +58,7 @@ pip install -r requirements.txt
   ](https://namileriblog.com/linux/ubuntu_pyenv/#i-3)
 - [how to solve module 'gym.wrappers' has no attribute 'Monitor'？](https://stackoverflow.com/questions/71411045/how-to-solve-module-gym-wrappers-has-no-attribute-monitor)
 - [OpenCV を使用して Python で動画（ビデオ）を再生する](https://laboratory.kazuuu.net/play-video-in-python-using-opencv/)
+- [ALE Namespace does not exist.](https://github.com/openai/gym/issues/3201#issuecomment-1493032556)
+- [Error in importing environment OpenAI Gym](https://stackoverflow.com/questions/69442971/error-in-importing-environment-openai-gym)
+- [zsh でのコマンド入力時の注意](https://ttt24224222.hatenadiary.jp/entry/2018/06/30/181130)
+- [Gym で使用できる環境の確認](https://github.com/openai/gym/issues/3201#issuecomment-1487606973)

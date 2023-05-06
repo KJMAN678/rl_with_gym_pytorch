@@ -1,5 +1,6 @@
 import random
 
+import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -60,3 +61,8 @@ def torch_fix_seed(seed=42):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.use_deterministic_algorithms = True
+
+
+def make_env(env_name):
+    env = gym.make(env_name, render_mode="rgb_array").unwrapped
+    return env

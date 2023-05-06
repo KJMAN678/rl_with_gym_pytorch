@@ -15,14 +15,9 @@ import torch
 import torch.nn as nn
 from scipy.signal import convolve, gaussian
 from tqdm import trange
-from utils import torch_fix_seed
+from utils import make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def make_env(env_name):
-    env = gym.make(env_name, render_mode="rgb_array").unwrapped
-    return env
 
 
 class DQNAgent(nn.Module):
