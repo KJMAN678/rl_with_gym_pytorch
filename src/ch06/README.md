@@ -32,3 +32,5 @@ python -m tkinter
 ```
 
 <img src="../../images/ch06_tk_test_gui.png">
+
+- [参考:Mac の pyenv 環境下で tkinter を使えるようにする方法](https://qiita.com/saki-engineering/items/92b7ec12ed07338929a3)
