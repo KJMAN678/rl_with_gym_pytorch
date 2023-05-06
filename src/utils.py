@@ -1,5 +1,8 @@
+import random
+
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 
 def plot_rewards(env_name, rewards, label):
@@ -48,3 +51,12 @@ def print_policy(env, agent):
             else:
                 print(f" {actions[agent.max_action(y * nC + x)]}", end="")
         print()
+
+
+def torch_fix_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.use_deterministic_algorithms = True

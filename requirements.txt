@@ -15,3 +15,4 @@ torchvision==0.13.1+cu116; sys_platform == 'linux'
 torchvision==0.13.1; sys_platform == 'darwin'
 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu116 sys_platform == 'linux'
 torchaudio==0.12.1; sys_platform == 'darwin'
+scipy==1.10.1

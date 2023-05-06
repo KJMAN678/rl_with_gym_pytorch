@@ -5,3 +5,4 @@ __pycache__/
 *.mp4
 *.json
 src/ch05/MNIST_data
+src/ch06/*.png
