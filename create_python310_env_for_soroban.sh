@@ -31,3 +31,12 @@ sudo apt-get install vim -y
 
 # for pyenv
 sudo apt install liblzma-dev
+
+# for install error
+sudo apt update
+apt list --upgradable
+sudo apt upgrade
+sudo apt install libcudnn8 libcudnn8-dev libnccl-dev libnccl2
+
+# for cv2
+sudo apt-get install libglib2.0-0 -y

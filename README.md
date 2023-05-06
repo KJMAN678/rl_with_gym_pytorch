@@ -11,18 +11,7 @@ bash create_python310_env_for_soroban.sh
 # pyenv の環境変数設定
 nano ~/.bashrc
 
-# 不要かも？
-# 以下を .bashrc に書き込む
-PYENV_ROOT="${HOME}/.pyenv"
-PATH="${PYENV_ROOT}/bin:${PATH}"
-if command -v pyenv 1>/dev/null 2>&1; then
-  eval "$(pyenv init -)"
-fi
-
-# 再起動
-exec $SHELL
-# 不要かも？
-
+# 下記を追記して保存
 echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
 echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
 echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
