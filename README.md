@@ -62,3 +62,6 @@ pip install -r requirements.txt
 - [Error in importing environment OpenAI Gym](https://stackoverflow.com/questions/69442971/error-in-importing-environment-openai-gym)
 - [zsh でのコマンド入力時の注意](https://ttt24224222.hatenadiary.jp/entry/2018/06/30/181130)
 - [Gym で使用できる環境の確認](https://github.com/openai/gym/issues/3201#issuecomment-1487606973)
+- Gymnasium で Atari の ROM を使う
+  - [AutoROM --accept-license](https://github.com/openai/gym/issues/3170#issuecomment-1377978144)
+  - [pip install gymnasium[atari, accept-rom-license]](https://github.com/openai/gym/issues/3201#issuecomment-1493032556)
