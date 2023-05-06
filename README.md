@@ -16,9 +16,8 @@ echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
 echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
 echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
 
+# 追記した環境変数を認識させる
 source ~/.bashrc
-
-https://qiita.com/seigot/items/dc63ed75e6a46f1accab
 
 # pyenv で Python 3.8.16 をインストール
 pyenv install 3.10.11
@@ -65,3 +64,4 @@ pip install -r requirements.txt
 - Gymnasium で Atari の ROM を使う
   - [AutoROM --accept-license](https://github.com/openai/gym/issues/3170#issuecomment-1377978144)
   - [pip install gymnasium[atari, accept-rom-license]](https://github.com/openai/gym/issues/3201#issuecomment-1493032556)
+- [ubuntu で pyenv 使用を試みるも python バージョンが切り替わらない](https://qiita.com/seigot/items/dc63ed75e6a46f1accab)

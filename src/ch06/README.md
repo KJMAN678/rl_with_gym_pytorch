@@ -1,8 +1,7 @@
 ```sh
 python3 src/ch06/torch_dqn.py
 
-# ライセンスの受け入れ処理
-AutoROM --accept-license
+AutoROM --accept-license # (初回のみ実行)ライセンスの受け入れ処理
 python3 src/ch06/torch_dqn_atari_game.py
 ```
 
