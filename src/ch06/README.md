@@ -33,3 +33,5 @@ python -m tkinter
 <img src="../../images/ch06_tk_test_gui.png">
 
 - [参考:Mac の pyenv 環境下で tkinter を使えるようにする方法](https://qiita.com/saki-engineering/items/92b7ec12ed07338929a3)
+- [gymnasium.wrappers.RecordVideo](https://gymnasium.farama.org/main/api/wrappers/misc_wrappers/#gymnasium.wrappers.RecordVideo)
+  - [強化学習実装入門 (DQN 編)](https://unproductive.dev/rl-implementation-dqn/#%E5%AD%A6%E7%BF%92%E7%B5%90%E6%9E%9C)

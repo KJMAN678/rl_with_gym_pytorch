@@ -6,3 +6,4 @@ __pycache__/
 *.json
 src/ch05/MNIST_data
 src/ch06/*.png
+videos/
