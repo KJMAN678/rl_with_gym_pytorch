@@ -5,39 +5,21 @@ import os
 import shutil
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-import ale_py
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from gymnasium.wrappers import AtariPreprocessing, FrameStack, RecordVideo, TransformReward
+from gymnasium.wrappers import RecordVideo
 from IPython.display import HTML, clear_output
-
-# from gymnasium.utils.play import play
 from scipy.signal import convolve, gaussian
 from tqdm import trange
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 from utils import make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def make_env_atari(env_name, clip_rewards=True, seed=None):
-    env = gym.make(env_name, render_mode="rgb_array")
-    env.metadata["render_fps"] = 30
-    if seed is not None:
-        env.seed(seed)
-    env = AtariPreprocessing(env, screen_size=84, scale_obs=True)
-    env = FrameStack(env, num_stack=4)
-    if clip_rewards:
-        env = TransformReward(env, lambda r: np.sign(r))
-    return env
-
-
-def conv2d_size_out(size, kernel_size, stride):
-    return (size - (kernel_size - 1) - 1) // stride + 1
 
 
 class DQNAgent(nn.Module):
@@ -48,21 +30,22 @@ class DQNAgent(nn.Module):
         self.state_shape = state_shape
 
         state_dim = state_shape[0]
+        # a simple NN with state_dim as input vector (inout is state s)
+        # and self.n_actions as output vector of logits of q(s, a)
         self.network = nn.Sequential()
-        self.network.add_module("conv1", nn.Conv2d(4, 16, kernel_size=8, stride=4))
+        self.network.add_module("layer1", nn.Linear(state_dim, 192))
         self.network.add_module("relu1", nn.ReLU())
-        self.network.add_module("conv2", nn.Conv2d(16, 32, kernel_size=4, stride=2))
+        self.network.add_module("layer2", nn.Linear(192, 256))
         self.network.add_module("relu2", nn.ReLU())
-        self.network.add_module("flatten", nn.Flatten())
-        self.network.add_module("linear3", nn.Linear(2592, 256))
+        self.network.add_module("layer3", nn.Linear(256, 64))
         self.network.add_module("relu3", nn.ReLU())
-        self.network.add_module("linear4", nn.Linear(256, n_actions))
+        self.network.add_module("layer4", nn.Linear(64, n_actions))
 
         self.parameters = self.network.parameters()
 
-    def forward(self, states_t):
+    def forward(self, state_t):
         # pass the state at time t through the network to get Q(s,a)
-        qvalues = self.network(states_t)
+        qvalues = self.network(state_t)
         return qvalues
 
     def get_qvalues(self, states):
@@ -88,12 +71,10 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
         reward = 0
         for _ in range(t_max):
             qvalues = agent.get_qvalues([s])
-
             if greedy:
                 action = qvalues.argmax(axis=-1)[0]
             else:
                 action = agent.sample_actions(qvalues)[0]
-
             s, r, done, _, _ = env.step(action)
             reward += r
             if done:
@@ -103,28 +84,55 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
     return np.mean(rewards)
 
 
-class ReplayBuffer:
-    def __init__(self, size):
+class PrioritizedReplayBuffer:
+    def __init__(self, size, alpha=0.6, beta=0.4):
         self.size = size  # max number of items in buffer
-        self.buffer = []  # array to hold buffer
+        self.buffer = []  # array to holde buffer
         self.next_id = 0
+        self.alpha = alpha
+        self.beta = beta
+        self.priorities = np.ones(size)
+        self.epsilon = 1e-5
 
     def __len__(self):
         return len(self.buffer)
 
     def add(self, state, action, reward, next_state, done):
         item = (state, action, reward, next_state, done)
+        max_priority = self.priorities.max()
         if len(self.buffer) < self.size:
             self.buffer.append(item)
         else:
             self.buffer[self.next_id] = item
+        self.priorities[self.next_id] = max_priority
         self.next_id = (self.next_id + 1) % self.size
 
     def sample(self, batch_size):
-        idxs = np.random.choice(len(self.buffer), batch_size)
+        priorities = self.priorities[: len(self.buffer)]
+        probabilities = priorities**self.alpha
+        probabilities /= probabilities.sum()
+        N = len(self.buffer)
+        weights = (N * probabilities) ** (-self.beta)
+        weights /= weights.max()
+
+        idxs = np.random.choice(len(self.buffer), batch_size, p=probabilities)
+
         samples = [self.buffer[i] for i in idxs]
         states, actions, rewards, next_states, done_flags = list(zip(*samples))
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(done_flags)
+        weights = weights[idxs]
+
+        return (
+            np.array(states),
+            np.array(actions),
+            np.array(rewards),
+            np.array(next_states),
+            np.array(done_flags),
+            np.array(weights),
+            np.array(idxs),
+        )
+
+    def update_priorities(self, idxs, new_priorities):
+        self.priorities[idxs] = new_priorities + self.epsilon
 
 
 def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
@@ -146,15 +154,27 @@ def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
     return sum_rewards, s
 
 
-def compute_td_loss(
-    agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device
+def compute_td_loss_priority_replay(
+    agent,
+    target_network,
+    replay_buffer,
+    states,
+    actions,
+    rewards,
+    next_states,
+    done_flags,
+    weights,
+    buffer_idxs,
+    gamma=0.99,
+    device=device,
 ):
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=device, dtype=torch.float)
-    actions = torch.tensor(actions, device=device, dtype=torch.long)
-    rewards = torch.tensor(rewards, device=device, dtype=torch.float)
+    actions = torch.tensor(np.array(actions), device=device, dtype=torch.long)
+    rewards = torch.tensor(np.array(rewards), device=device, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=device, dtype=torch.float)
-    done_flags = torch.tensor(done_flags.astype("float32"), device=device, dtype=torch.float)
+    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=device, dtype=torch.float)
+    weights = torch.tensor(np.array(weights), device=device, dtype=torch.float)
 
     # get q-values for all actions in current states use agent network
     predicted_qvalues = agent(states)
@@ -165,14 +185,23 @@ def compute_td_loss(
     # select q-values for chosen actions
     predicted_qvalues_for_actions = predicted_qvalues[range(len(actions)), actions]
 
-    # compute Qmax(next_states, actions) using predicted next q-values
+    # compute Q max(next_states, actions) using predicted next q-values
     next_state_values, _ = torch.max(predicted_next_qvalues, dim=1)
 
     # compute "target q-values"
     target_qvalues_for_actions = rewards + gamma * next_state_values * (1 - done_flags)
 
+    # compute each sample TD error
+    loss = ((predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2) * weights
+
     # mean squared error loss to minimize
-    loss = torch.mean((predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2)
+    loss = loss.mean()
+
+    # calculate new priorities and update buffer
+    with torch.no_grad():
+        new_priorities = predicted_qvalues_for_actions.detach() - target_qvalues_for_actions.detach()
+        new_priorities = np.absolute(new_priorities.detach().numpy())
+        replay_buffer.update_priorities(buffer_idxs, new_priorities)
 
     return loss
 
@@ -204,8 +233,7 @@ def generate_animation(env, agent, save_dir):
         action = qvalues.argmax(axis=-1)[0]
         state, r, done, _, _ = env.step(action)
         reward += r
-        t += 1
-        if done or t >= 1000:
+        if done or reward >= 1000:
             print(f"Got reward: {reward}")
             break
 
@@ -220,77 +248,36 @@ def display_animation(filepath):
     )
 
 
-def main():
+def sample():
     seed = 42
     torch_fix_seed(seed)
 
-    env_name = "BreakoutNoFrameskip-v4"
+    env_name = "CartPole-v1"
 
     env = make_env(env_name)
-    env.reset(seed=seed)[0]
-
-    n_cols = 4
-    n_rows = 2
-    fig = plt.figure(figsize=(16, 9))
-
-    for row in range(n_rows):
-        for col in range(n_cols):
-            ax = fig.add_subplot(n_rows, n_cols, row * n_cols + col + 1)
-            ax.set_title(f"row:{row} col:{col}")
-            ax.imshow(env.render())
-            ax.tick_params(labelbottom=False, labelleft=False, labelright=False, labeltop=False)
-            env.step(env.action_space.sample())
-    plt.show(block=False)
-    plt.pause(2)
-    plt.close()
-
-    # play(env=gym.make(env_name), render_mode="rgb_array", zoom=2, fps=10)
-
-    env = make_env_atari(env_name)
-    env.reset()[0]
-    n_actions = env.action_space.n
-    state_shape = env.observation_space.shape
-
-    print(n_actions)
-    print(env.get_action_meanings())
-
-    for _ in range(12):
-        obs, _, _, _, _ = env.step(env.action_space.sample())
-
-    plt.figure(figsize=(12, 10))
-    plt.title("Game Image")
+    env.reset()
     plt.imshow(env.render())
     plt.show(block=False)
     plt.pause(2)
     plt.close()
 
-    obs = obs[:]
-    obs = np.transpose(obs, [1, 0, 2])
-    obs = obs.reshape((obs.shape[0], -1))
+    print(device)
 
-    plt.figure(figsize=(15, 15))
-    plt.title("Agent observation(4 frmaes left to right)")
-    plt.imshow(obs, cmap="gray")
-    plt.show(block=False)
-    plt.pause(2)
-    plt.close()
-
-    conv1 = conv2d_size_out(84, 8, 4)
-    print("Conv1", conv1)
-    conv2 = conv2d_size_out(conv1, 4, 2)
-    print("Conv2", conv2)
-
-    print("Input to Dense layer:", conv2 * conv2 * 32)
+    state_shape, n_actions = env.observation_space.shape, env.action_space.n
 
     agent = DQNAgent(state_shape, n_actions, epsilon=0.5).to(device)
 
-    evaluate(env, agent, n_games=1)
+    print(evaluate(env, agent, n_games=1))
     env.close()
 
-    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(device)
-    target_network.load_state_dict(agent.state_dict())
 
-    env = make_env_atari(env_name, seed)
+def main():
+    seed = 42
+    torch_fix_seed(seed)
+
+    env_name = "CartPole-v1"
+
+    env = make_env(env_name)
     state_dim = env.observation_space.shape
     n_actions = env.action_space.n
     state = env.reset()[0]
@@ -300,25 +287,24 @@ def main():
     target_network.load_state_dict(agent.state_dict())
 
     # let us fill experience replay with some samples using full random policy
-    exp_replay = ReplayBuffer(10**4)
+    exp_replay = PrioritizedReplayBuffer(10**4)
     for i in range(100):
         play_and_record(state, agent, env, exp_replay, n_steps=10**2)
         if len(exp_replay) == 10**4:
             break
     print(len(exp_replay))
 
-    # setup some parameters for training
     timesteps_per_epoch = 1
     batch_size = 32
-    total_steps = 100
+    total_steps = 45000
 
     # init Optimizer
     opt = torch.optim.Adam(agent.parameters, lr=1e-4)
 
     # set exploration epsilon
-    start_epsilon = 1
+    start_epsilon = 1.0
     end_epsilon = 0.05
-    eps_decay_final_step = 1 * 10**6
+    eps_decay_final_step = 10**4
 
     # setup spme frequency for logging and updating target network
     loss_freq = 20
@@ -340,11 +326,22 @@ def main():
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags, weights, idxs = exp_replay.sample(batch_size)
 
         # loss = <compute TD loss>
-        loss = compute_td_loss(
-            agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device
+        loss = compute_td_loss_priority_replay(
+            agent,
+            target_network,
+            exp_replay,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            weights,
+            idxs,
+            gamma=0.99,
+            device=device,
         )
 
         loss.backward()
@@ -361,9 +358,7 @@ def main():
 
         if step % eval_freq == 0:
             # eval the agent
-            mean_rw_history.append(
-                evaluate(make_env_atari(env_name, seed=step), agent, n_games=3, greedy=True, t_max=1000)
-            )
+            mean_rw_history.append(evaluate(make_env(env_name), agent, n_games=3, greedy=True, t_max=1000))
 
             clear_output(True)
             print(f"buffer size = {len(exp_replay)}, epsilon = {agent.epsilon: .5f}")
@@ -381,23 +376,23 @@ def main():
             plt.grid()
 
             plt.show(block=False)
-            plt.pause(2)
-            plt.close()
 
-    final_score = evaluate(make_env_atari(env_name), agent, n_games=1, greedy=True, t_max=1000)
+    final_score = evaluate(make_env(env_name), agent, n_games=30, greedy=True, t_max=1000)
     print(f"final score: {final_score}")
+    print("Well done")
 
     # Animate learned policy
     if os.path.exists("./videos/"):
         shutil.rmtree("./videos/")
 
-    save_dir = "./videos/pytorch/6_2/"
-    env = make_env_atari(env_name)
+    save_dir = "./videos/pytorch/6_3/"
+    env = make_env(env_name)
     generate_animation(env, agent, save_dir=save_dir)
-    # [filepath] = glob.glob(os.path.join(save_dir, "*.mp4"))
-    # display_animation(filepath)
+    [filepath] = glob.glob(os.path.join(save_dir, "*.mp4"))
+    display_animation(filepath)
     env.close()
 
 
 if __name__ == "__main__":
+    sample()
     main()

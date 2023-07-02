@@ -63,6 +63,8 @@ def torch_fix_seed(seed=42):
     torch.use_deterministic_algorithms = True
 
 
-def make_env(env_name):
+def make_env(env_name, seed=None):
     env = gym.make(env_name, render_mode="rgb_array").unwrapped
+    if seed is not None:
+        env.seed(seed)
     return env
