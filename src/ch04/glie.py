@@ -6,8 +6,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from gridworld import GridworldEnv
 from tqdm import tqdm
+
+from gridworld import GridworldEnv
 
 
 def mc_policy_eval(policy, env, discount_factor=1.0, episode_count=100):

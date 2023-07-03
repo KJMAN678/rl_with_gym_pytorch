@@ -10,6 +10,7 @@ import numpy as np
 import seaborn as sns
 from gymnasium.envs import toy_text
 from q_learning import QLearningAgent
+
 from utils import plot_rewards, print_policy
 
 

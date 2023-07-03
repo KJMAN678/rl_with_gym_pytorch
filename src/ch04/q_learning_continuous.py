@@ -12,6 +12,7 @@ from gymnasium.core import ObservationWrapper
 from q_learning import QLearningAgent
 from replay_buffer import ReplayBuffer
 from tqdm import tqdm
+
 from utils import plot_rewards
 
 

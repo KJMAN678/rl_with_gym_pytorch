@@ -10,6 +10,7 @@ import numpy as np
 import seaborn as sns
 from tiles3 import IHT, tiles
 from tqdm import tqdm
+
 from utils import plot_rewards
 
 warnings.filterwarnings("ignore")

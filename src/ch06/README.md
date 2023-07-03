@@ -5,6 +5,8 @@ AutoROM --accept-license # (初回のみ実行)ライセンスの受け入れ処
 python3 src/ch06/torch_dqn_atari_game.py
 
 python3 src/ch06/torch_dqn_prioritized_replay.py
+
+python3 src/ch06/torch_double_dqn.py
 ```
 
 # tkinter のランタイムエラー対策

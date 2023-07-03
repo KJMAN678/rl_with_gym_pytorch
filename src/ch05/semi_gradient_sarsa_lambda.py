@@ -15,6 +15,7 @@ import seaborn as sns
 from gymnasium.wrappers.monitoring.video_recorder import VideoRecorder
 from tiles3 import IHT, tiles
 from tqdm import tqdm
+
 from utils import plot_rewards
 
 

@@ -13,12 +13,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from gymnasium.wrappers import AtariPreprocessing, FrameStack, RecordVideo, TransformReward
+from gymnasium.wrappers import (AtariPreprocessing, FrameStack, RecordVideo,
+                                TransformReward)
 from IPython.display import HTML, clear_output
-
 # from gymnasium.utils.play import play
 from scipy.signal import convolve, gaussian
 from tqdm import trange
+
 from utils import make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
