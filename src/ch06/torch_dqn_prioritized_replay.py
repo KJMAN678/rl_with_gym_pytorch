@@ -1,23 +1,19 @@
-import base64
 import glob
-import io
 import os
 import shutil
 import sys
 
-import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from gymnasium.wrappers import RecordVideo
-from IPython.display import HTML, clear_output
+from IPython.display import clear_output
 from scipy.signal import convolve, gaussian
 from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import make_env, torch_fix_seed
+from utils import display_animation, generate_animation, make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -214,38 +210,6 @@ def smoothen(values):
     kernel = gaussian(100, std=100)
     kernel = kernel / np.sum(kernel)
     return convolve(values, kernel, "valid")
-
-
-def generate_animation(env, agent, save_dir):
-    try:
-        env = RecordVideo(env, save_dir, episode_trigger=lambda id: True)
-    except gym.error.Error as e:
-        print(e)
-
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    state = env.reset()[0]
-    reward = 0
-    t = 0
-    while True:
-        qvalues = agent.get_qvalues([state])
-        action = qvalues.argmax(axis=-1)[0]
-        state, r, done, _, _ = env.step(action)
-        reward += r
-        if done or reward >= 1000:
-            print(f"Got reward: {reward}")
-            break
-
-
-def display_animation(filepath):
-    video = io.open(filepath, "r+b").read()
-    encoded = base64.b64encode(video)
-    return HTML(
-        data=f"""<video alt="test controls>
-                <source src=data: video/mp4; base64, {encoded.decode('ascii')} type="video/mp4" />
-                </video>"""
-    )
 
 
 def sample():

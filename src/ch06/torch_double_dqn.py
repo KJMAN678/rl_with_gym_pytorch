@@ -1,51 +1,27 @@
-import base64
 import glob
-import io
-import math
 import os
-import random
 import shutil
 import sys
-import time
-from collections import namedtuple
 
-import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from gymnasium.wrappers import RecordVideo
-from IPython.display import HTML, clear_output
+from IPython.display import clear_output
 from scipy.signal import convolve, gaussian
 from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import make_env, torch_fix_seed
+from utils import display_animation, generate_animation, make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed = 42
 torch_fix_seed(seed)
 
 ENV_NAME = "CartPole-v1"
-timesteps_per_epoch = 1
-batch_size = 32
-total_steps = 5 * 10**4
-
-# set exploration epsilon
-start_epsilon = 1
-end_epsilon = 0.05
-eps_decay_final_step = 2 * 10**4
-
-# setup spme frequency for loggind and updating target network
-loss_freq = 50
-refresh_target_network_freq = 100
-eval_freq = 1000
-
-# to clip the gradients
-max_grad_norm = 5000
 
 
 class DQNAgent(nn.Module):
@@ -195,7 +171,23 @@ def smoothen(values):
     return convolve(values, kernel, "valid")
 
 
-def train_agent(env, agent, target_network, optimizer, td_loss_fn):
+def train_agent(
+    env,
+    agent,
+    target_network,
+    optimizer,
+    total_steps,
+    start_epsilon,
+    end_epsilon,
+    eps_decay_final_step,
+    timesteps_per_epoch,
+    batch_size,
+    max_grad_norm,
+    loss_freq,
+    refresh_target_network_freq,
+    eval_freq,
+    td_loss_fn,
+):
     state = env.reset()[0]
     # let us fill experience replay with some samples using full random policy
     exp_replay = ReplayBuffer(10**4)
@@ -259,37 +251,6 @@ def train_agent(env, agent, target_network, optimizer, td_loss_fn):
             plt.close()
 
 
-def generate_animation(env, agent, save_dir):
-    try:
-        env = RecordVideo(env, save_dir, episode_trigger=lambda id: True)
-    except gym.error.Error as e:
-        print(e)
-
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    state = env.reset()[0]
-    reward = 0
-    while True:
-        qvalues = agent.get_qvalues([state])
-        action = qvalues.argmax(axis=-1)[0]
-        state, r, done, _, _ = env.step(action)
-        reward += r
-        if done or reward >= 1000:
-            print(f"Got reward: {reward}")
-            break
-
-
-def display_animation(filepath):
-    video = io.open(filepath, "r+b").read()
-    encoded = base64.b64encode(video)
-    return HTML(
-        data=f"""<video alt="test controls>
-                <source src=data: video/mp4; base64, {encoded.decode('ascii')} type="video/mp4" />
-                </video>"""
-    )
-
-
 def sample():
     env = make_env(ENV_NAME)
     env.reset()
@@ -314,9 +275,42 @@ def main():
     agent = DQNAgent(state_dim, n_actions, epsilon=1).to(device)
     target_network = DQNAgent(state_dim, n_actions, epsilon=1).to(device)
     target_network.load_state_dict(agent.state_dict())
-    optimizer = torch.optim.Adam(agent.parameters(), lr=1e-4)
+    optimizer = optim.Adam(agent.parameters(), lr=1e-4)
 
-    train_agent(env, agent, target_network, optimizer, td_loss_fn=td_loss_ddqn)
+    timesteps_per_epoch = 1
+    batch_size = 32
+    total_steps = 5 * 10**4
+
+    # set exploration epsilon
+    start_epsilon = 1
+    end_epsilon = 0.05
+    eps_decay_final_step = 2 * 10**4
+
+    # setup spme frequency for loggind and updating target network
+    loss_freq = 50
+    refresh_target_network_freq = 100
+    eval_freq = 1000
+
+    # to clip the gradients
+    max_grad_norm = 5000
+
+    train_agent(
+        env,
+        agent,
+        target_network,
+        optimizer,
+        total_steps,
+        start_epsilon,
+        end_epsilon,
+        eps_decay_final_step,
+        timesteps_per_epoch,
+        batch_size,
+        max_grad_norm,
+        loss_freq,
+        refresh_target_network_freq,
+        eval_freq,
+        td_loss_fn=td_loss_ddqn,
+    )
 
     final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
     print("final score: {:.0f}".format(final_score))

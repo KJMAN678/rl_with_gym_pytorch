@@ -1,26 +1,20 @@
-import base64
-import glob
-import io
 import os
 import shutil
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-import ale_py
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from gymnasium.wrappers import (AtariPreprocessing, FrameStack, RecordVideo,
-                                TransformReward)
-from IPython.display import HTML, clear_output
-# from gymnasium.utils.play import play
+from gymnasium.wrappers import AtariPreprocessing, FrameStack, TransformReward
+from IPython.display import clear_output
 from scipy.signal import convolve, gaussian
 from tqdm import trange
 
-from utils import make_env, torch_fix_seed
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+from utils import display_animation, generate_animation, make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -186,39 +180,6 @@ def smoothen(values):
     kernel = gaussian(100, std=100)
     kernel = kernel / np.sum(kernel)
     return convolve(values, kernel, "valid")
-
-
-def generate_animation(env, agent, save_dir):
-    try:
-        env = RecordVideo(env, save_dir, episode_trigger=lambda id: True)
-    except gym.error.Error as e:
-        print(e)
-
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    state = env.reset()[0]
-    reward = 0
-    t = 0
-    while True:
-        qvalues = agent.get_qvalues([state])
-        action = qvalues.argmax(axis=-1)[0]
-        state, r, done, _, _ = env.step(action)
-        reward += r
-        t += 1
-        if done or t >= 1000:
-            print(f"Got reward: {reward}")
-            break
-
-
-def display_animation(filepath):
-    video = io.open(filepath, "r+b").read()
-    encoded = base64.b64encode(video)
-    return HTML(
-        data=f"""<video alt="test controls>
-                <source src=data: video/mp4; base64, {encoded.decode('ascii')} type="video/mp4" />
-                </video>"""
-    )
 
 
 def main():
@@ -395,8 +356,8 @@ def main():
     save_dir = "./videos/pytorch/6_2/"
     env = make_env_atari(env_name)
     generate_animation(env, agent, save_dir=save_dir)
-    # [filepath] = glob.glob(os.path.join(save_dir, "*.mp4"))
-    # display_animation(filepath)
+    [filepath] = glob.glob(os.path.join(save_dir, "*.mp4"))
+    display_animation(filepath)
     env.close()
 
 

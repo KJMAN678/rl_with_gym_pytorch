@@ -1,21 +1,15 @@
-import base64
-import glob
-import io
 import os
-import random
 import sys
 import time
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 from scipy.signal import convolve, gaussian
 from tqdm import trange
-
 from utils import make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
