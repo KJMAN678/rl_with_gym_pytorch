@@ -1,9 +1,14 @@
+import base64
+import io
+import os
 import random
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from gymnasium.wrappers import RecordVideo
+from IPython.display import HTML
 
 
 def plot_rewards(env_name, rewards, label):
@@ -68,3 +73,34 @@ def make_env(env_name, seed=None):
     if seed is not None:
         env.seed(seed)
     return env
+
+
+def generate_animation(env, agent, save_dir):
+    try:
+        env = RecordVideo(env, save_dir, episode_trigger=lambda id: True)
+    except gym.error.Error as e:
+        print(e)
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    state = env.reset()[0]
+    reward = 0
+    while True:
+        qvalues = agent.get_qvalues([state])
+        action = qvalues.argmax(axis=-1)[0]
+        state, r, done, _, _ = env.step(action)
+        reward += r
+        if done or reward >= 1000:
+            print(f"Got reward: {reward}")
+            break
+
+
+def display_animation(filepath):
+    video = io.open(filepath, "r+b").read()
+    encoded = base64.b64encode(video)
+    return HTML(
+        data=f"""<video alt="test controls>
+                <source src=data: video/mp4; base64, {encoded.decode('ascii')} type="video/mp4" />
+                </video>"""
+    )
