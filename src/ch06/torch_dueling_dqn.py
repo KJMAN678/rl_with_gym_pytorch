@@ -245,6 +245,51 @@ def train_agent(
             plt.close()
 
 
+class DuelingDQNAgent(nn.Module):
+    def __init__(self, state_shape, n_actions, epsilon=0):
+        super().__init__()
+        self.epsilon = epsilon
+        self.n_actions = n_actions
+        self.state_shape = state_shape
+
+        state_dim = state_shape[0]
+        # a simple NN with state_dim as input vector (inout is state s)
+        # and self.n_actions as output vector of logits of q(s, a)
+        self.fc1 = nn.Linear(state_dim, 64)
+        self.fc2 = nn.Linear(64, 128)
+        self.fc_value = nn.Linear(128, 32)
+        self.fc_adv = nn.Linear(128, 32)
+        self.value = nn.Linear(32, 1)
+        self.adv = nn.Linear(32, n_actions)
+
+    def forward(self, state_t):
+        # pass the state at time t through the network to get Q(s,a)
+        x = F.relu(self.fc1(state_t))
+        x = F.relu(self.fc2(x))
+        v = F.relu(self.fc_value(x))
+        v = self.value(v)
+        adv = F.relu(self.fc_adv(x))
+        adv = self.adv(adv)
+        adv_avg = torch.mean(adv, dim=1, keepdim=True)
+        qvalues = v + adv - adv_avg
+        return qvalues
+
+    def get_qvalues(self, states):
+        # pass the state at time t through the network to get Q(s,a)
+        states = torch.tensor(np.array(states), device=device, dtype=torch.float32)
+        qvalues = self.forward(states)
+        return qvalues.data.cpu().numpy()
+
+    def sample_actions(self, qvalues):
+        # sample actions from a batch of q_values using epsilon greedy policy
+        epsilon = self.epsilon
+        batch_size, n_actions = qvalues.shape
+        random_actions = np.random.choice(n_actions, size=batch_size)
+        best_actions = qvalues.argmax(axis=-1)
+        should_explore = np.random.choice([0, 1], batch_size, p=[1 - epsilon, epsilon])
+        return np.where(should_explore, random_actions, best_actions)
+
+
 def show_env():
     env = make_env(ENV_NAME)
     env.reset()
@@ -323,7 +368,56 @@ def main():
     env.close()
 
 
+def dueling_main():
+    timesteps_per_epoch = 1
+    batch_size = 32
+    total_steps = 3 * 10**4
+
+    start_epsilon = 1
+    end_epsilon = 0.05
+    eps_decay_final_step = 2 * 10**4
+
+    loss_freq = 50
+    refresh_target_network_freq = 100
+    eval_freq = 1000
+
+    max_grad_norm = 5000
+
+    env = make_env(ENV_NAME)
+    state_dim = env.observation_space.shape
+    n_actions = env.action_space.n
+
+    # init agent, target network and Optimizer
+    agent = DuelingDQNAgent(state_dim, n_actions, epsilon=1).to(device)
+    target_network = DuelingDQNAgent(state_dim, n_actions, epsilon=1).to(device)
+    target_network.load_state_dict(agent.state_dict())
+    optimizer = optim.Adam(agent.parameters(), lr=1e-4)
+
+    train_agent(
+        env,
+        agent,
+        target_network,
+        optimizer,
+        total_steps,
+        start_epsilon,
+        end_epsilon,
+        eps_decay_final_step,
+        timesteps_per_epoch,
+        batch_size,
+        max_grad_norm,
+        loss_freq,
+        refresh_target_network_freq,
+        eval_freq,
+        td_loss_fn=td_loss_dqn,
+    )
+
+    final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
+
+    print(f"final score(Dueling DQN): {final_score:.0f}.")
+
+
 if __name__ == "__main__":
     torch_fix_seed(42)
     show_env()
     main()
+    dueling_main()
