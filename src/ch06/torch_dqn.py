@@ -67,7 +67,11 @@ def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
         for _ in range(t_max):
             s = s.tolist()  # 高速化のため np.darray を list に変更
             qvalues = agent.get_qvalues([s])
-            action = qvalues.argmax(axis=-1)[0] if greedy else agent.sample_actions(qvalues)[0]
+            action = (
+                qvalues.argmax(axis=-1)[0]
+                if greedy
+                else agent.sample_actions(qvalues)[0]
+            )
             s, r, done, _, _ = env.step(action)
             reward += r
             if done:
@@ -97,7 +101,13 @@ class ReplayBuffer:
         idxs = np.random.choice(len(self.buffer), batch_size)
         samples = [self.buffer[i] for i in idxs]
         states, actions, rewards, next_states, done_flags = list(zip(*samples))
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(done_flags)
+        return (
+            np.array(states),
+            np.array(actions),
+            np.array(rewards),
+            np.array(next_states),
+            np.array(done_flags),
+        )
 
 
 def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
@@ -119,14 +129,24 @@ def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
 
 
 def compute_td_loss(
-    agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device
+    agent,
+    target_network,
+    states,
+    actions,
+    rewards,
+    next_states,
+    done_flags,
+    gamma=0.99,
+    device=device,
 ):
     """numpy の array を Tensor に変換する"""
     states = torch.tensor(states, device=device, dtype=torch.float)
     actions = torch.tensor(actions, device=device, dtype=torch.long)
     rewards = torch.tensor(rewards, device=device, dtype=torch.float)
     next_states = torch.tensor(next_states, device=device, dtype=torch.float)
-    done_flags = torch.tensor(done_flags.astype("float32"), device=device, dtype=torch.float)
+    done_flags = torch.tensor(
+        done_flags.astype("float32"), device=device, dtype=torch.float
+    )
 
     # 現在の状態の全ての行動ごとにQ値を獲得する
     # エージェントのネットワークを使う
@@ -146,7 +166,9 @@ def compute_td_loss(
     target_qvalues_for_actions = rewards + gamma * next_state_values * (1 - done_flags)
 
     # 最小化のため平均二乗誤差を計算する
-    loss = torch.mean((predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2)
+    loss = torch.mean(
+        (predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2
+    )
 
     return loss
 
@@ -184,7 +206,9 @@ def main():
     print(f"score: {evaluate(env, agent, n_games=1)}")
     env.close()
 
-    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(device)
+    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(
+        device
+    )
     target_network.load_state_dict(agent.state_dict())
 
     # Main Loop
@@ -230,17 +254,29 @@ def main():
 
     for step in trange(total_steps + 1):
         # 進歩として探索を減らす
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # timesteps_per_epochを取得し、experience replay バッファを更新する。
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # experience replay からバッチサイズのデータをサンプリングして学習させる
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
 
         # TD誤差を計算
         loss = compute_td_loss(
-            agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device
+            agent,
+            target_network,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            gamma=0.99,
+            device=device,
         )
 
         loss.backward()
@@ -257,7 +293,9 @@ def main():
 
         if step % eval_freq == 0:
             # エージェントを評価する
-            mean_rw_history.append(evaluate(make_env(env_name), agent, n_games=3, greedy=True, t_max=1000))
+            mean_rw_history.append(
+                evaluate(make_env(env_name), agent, n_games=3, greedy=True, t_max=1000)
+            )
 
             fig, axes = plt.subplots(nrows=1, ncols=2, figsize=[16, 9])
 
@@ -280,7 +318,9 @@ def main():
             plt.pause(0.5)
             plt.close()
 
-    final_score = evaluate(make_env(env_name), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(env_name), agent, n_games=30, greedy=True, t_max=1000
+    )
     print(f"final score: {final_score: .2f}")
     print("Well done")
 

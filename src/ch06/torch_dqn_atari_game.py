@@ -14,8 +14,7 @@ from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import (display_animation, generate_animation, make_env,
-                   torch_fix_seed)
+from utils import display_animation, generate_animation, make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -120,7 +119,13 @@ class ReplayBuffer:
         idxs = np.random.choice(len(self.buffer), batch_size)
         samples = [self.buffer[i] for i in idxs]
         states, actions, rewards, next_states, done_flags = list(zip(*samples))
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(done_flags)
+        return (
+            np.array(states),
+            np.array(actions),
+            np.array(rewards),
+            np.array(next_states),
+            np.array(done_flags),
+        )
 
 
 def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
@@ -143,14 +148,24 @@ def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
 
 
 def compute_td_loss(
-    agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device
+    agent,
+    target_network,
+    states,
+    actions,
+    rewards,
+    next_states,
+    done_flags,
+    gamma=0.99,
+    device=device,
 ):
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=device, dtype=torch.float)
     actions = torch.tensor(actions, device=device, dtype=torch.long)
     rewards = torch.tensor(rewards, device=device, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=device, dtype=torch.float)
-    done_flags = torch.tensor(done_flags.astype("float32"), device=device, dtype=torch.float)
+    done_flags = torch.tensor(
+        done_flags.astype("float32"), device=device, dtype=torch.float
+    )
 
     # get q-values for all actions in current states use agent network
     predicted_qvalues = agent(states)
@@ -168,7 +183,9 @@ def compute_td_loss(
     target_qvalues_for_actions = rewards + gamma * next_state_values * (1 - done_flags)
 
     # mean squared error loss to minimize
-    loss = torch.mean((predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2)
+    loss = torch.mean(
+        (predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2
+    )
 
     return loss
 
@@ -201,7 +218,9 @@ def main():
             ax = fig.add_subplot(n_rows, n_cols, row * n_cols + col + 1)
             ax.set_title(f"row:{row} col:{col}")
             ax.imshow(env.render())
-            ax.tick_params(labelbottom=False, labelleft=False, labelright=False, labeltop=False)
+            ax.tick_params(
+                labelbottom=False, labelleft=False, labelright=False, labeltop=False
+            )
             env.step(env.action_space.sample())
     plt.show(block=False)
     plt.pause(2)
@@ -250,7 +269,9 @@ def main():
     evaluate(env, agent, n_games=1)
     env.close()
 
-    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(device)
+    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(
+        device
+    )
     target_network.load_state_dict(agent.state_dict())
 
     env = make_env_atari(env_name, seed)
@@ -297,17 +318,29 @@ def main():
     state = env.reset()[0]
     for step in trange(total_steps + 1):
         # reduce exploration as we progress
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # take timesteps_per_epoch and update experience replay buffer
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
 
         # loss = <compute TD loss>
         loss = compute_td_loss(
-            agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device
+            agent,
+            target_network,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            gamma=0.99,
+            device=device,
         )
 
         loss.backward()
@@ -325,7 +358,13 @@ def main():
         if step % eval_freq == 0:
             # eval the agent
             mean_rw_history.append(
-                evaluate(make_env_atari(env_name, seed=step), agent, n_games=3, greedy=True, t_max=1000)
+                evaluate(
+                    make_env_atari(env_name, seed=step),
+                    agent,
+                    n_games=3,
+                    greedy=True,
+                    t_max=1000,
+                )
             )
 
             clear_output(True)
@@ -347,7 +386,9 @@ def main():
             plt.pause(2)
             plt.close()
 
-    final_score = evaluate(make_env_atari(env_name), agent, n_games=1, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env_atari(env_name), agent, n_games=1, greedy=True, t_max=1000
+    )
     print(f"final score: {final_score}")
 
     # Animate learned policy

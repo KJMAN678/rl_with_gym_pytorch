@@ -8,5 +8,5 @@ S = np.array([0.5, 0.5])
 for i in range(10):
     S = np.dot(S, P)
     print(f"\nIter {i}. Probability vector S = {S}")
-    
+
 print(f"\nFinal Vector S={S}")

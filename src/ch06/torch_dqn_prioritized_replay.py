@@ -13,8 +13,7 @@ from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import (display_animation, generate_animation, make_env,
-                   torch_fix_seed)
+from utils import display_animation, generate_animation, make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -170,7 +169,9 @@ def compute_td_loss_priority_replay(
     actions = torch.tensor(np.array(actions), device=device, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=device, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=device, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=device, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags.astype("float32")), device=device, dtype=torch.float
+    )
     weights = torch.tensor(np.array(weights), device=device, dtype=torch.float)
 
     # get q-values for all actions in current states use agent network
@@ -189,14 +190,18 @@ def compute_td_loss_priority_replay(
     target_qvalues_for_actions = rewards + gamma * next_state_values * (1 - done_flags)
 
     # compute each sample TD error
-    loss = ((predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2) * weights
+    loss = (
+        (predicted_qvalues_for_actions - target_qvalues_for_actions.detach()) ** 2
+    ) * weights
 
     # mean squared error loss to minimize
     loss = loss.mean()
 
     # calculate new priorities and update buffer
     with torch.no_grad():
-        new_priorities = predicted_qvalues_for_actions.detach() - target_qvalues_for_actions.detach()
+        new_priorities = (
+            predicted_qvalues_for_actions.detach() - target_qvalues_for_actions.detach()
+        )
         new_priorities = np.absolute(new_priorities.detach().numpy())
         replay_buffer.update_priorities(buffer_idxs, new_priorities)
 
@@ -285,13 +290,23 @@ def main():
     state = env.reset()[0]
     for step in trange(total_steps + 1):
         # reduce exploration as we progress
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # take timesteps_per_epoch and update experience replay buffer
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags, weights, idxs = exp_replay.sample(batch_size)
+        (
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            weights,
+            idxs,
+        ) = exp_replay.sample(batch_size)
 
         # loss = <compute TD loss>
         loss = compute_td_loss_priority_replay(
@@ -323,7 +338,9 @@ def main():
 
         if step % eval_freq == 0:
             # eval the agent
-            mean_rw_history.append(evaluate(make_env(env_name), agent, n_games=3, greedy=True, t_max=1000))
+            mean_rw_history.append(
+                evaluate(make_env(env_name), agent, n_games=3, greedy=True, t_max=1000)
+            )
 
             clear_output(True)
             print(f"buffer size = {len(exp_replay)}, epsilon = {agent.epsilon: .5f}")
@@ -342,7 +359,9 @@ def main():
 
             plt.show(block=False)
 
-    final_score = evaluate(make_env(env_name), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(env_name), agent, n_games=30, greedy=True, t_max=1000
+    )
     print(f"final score: {final_score}")
     print("Well done")
 

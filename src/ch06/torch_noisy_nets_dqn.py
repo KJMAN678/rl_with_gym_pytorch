@@ -17,8 +17,7 @@ from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import (display_animation, generate_animation, make_env,
-                   torch_fix_seed)
+from utils import display_animation, generate_animation, make_env, torch_fix_seed
 
 ENV_NAME = "CartPole-v1"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -104,7 +103,13 @@ class ReplayBuffer:
         idxs = np.random.choice(len(self.buffer), batch_size)
         samples = [self.buffer[i] for i in idxs]
         states, actions, rewards, next_states, done_flags = list(zip(*samples))
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(done_flags)
+        return (
+            np.array(states),
+            np.array(actions),
+            np.array(rewards),
+            np.array(next_states),
+            np.array(done_flags),
+        )
 
 
 def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
@@ -126,13 +131,25 @@ def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
     return sum_rewards, s
 
 
-def td_loss_dqn(agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=DEVICE):
+def td_loss_dqn(
+    agent,
+    target_network,
+    states,
+    actions,
+    rewards,
+    next_states,
+    done_flags,
+    gamma=0.99,
+    device=DEVICE,
+):
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float)
     actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=DEVICE, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=DEVICE, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float
+    )
 
     # get q-values for all actions in current states use agent network
     q_s = agent(states)
@@ -197,18 +214,30 @@ def train_agent(
     state = env.reset()[0]
     for step in trange(total_steps + 1):
         # reduce exploration as we progress
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # take timesteps_per_epoch and update experience replay buffer
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
 
         # loss = <compute TD loss>
         optimizer.zero_grad()
         loss = td_loss_fn(
-            agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=DEVICE
+            agent,
+            target_network,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            gamma=0.99,
+            device=DEVICE,
         )
 
         loss.backward()
@@ -224,7 +253,9 @@ def train_agent(
 
         if step % eval_freq == 0:
             # eval the agent
-            mean_rw_history.append(evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000))
+            mean_rw_history.append(
+                evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000)
+            )
 
         clear_output(True)
 
@@ -368,18 +399,30 @@ def train_agent_noisy(
     state = env.reset()[0]
     for step in trange(total_steps + 1):
         # reduce exploration as we progress
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # take timesteps_per_epoch and update experience replay buffer
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
 
         # loss = <compute TD loss>
         optimizer.zero_grad()
         loss = td_loss_fn(
-            agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=DEVICE
+            agent,
+            target_network,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            gamma=0.99,
+            device=DEVICE,
         )
 
         loss.backward()
@@ -395,7 +438,9 @@ def train_agent_noisy(
 
         if step % eval_freq == 0:
             # eval the agent
-            mean_rw_history.append(evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000))
+            mean_rw_history.append(
+                evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000)
+            )
 
             clear_output(True)
             print(f"buffer size = {len(exp_replay)}, epsilon = {agent.epsilon :.5f}")
@@ -432,7 +477,9 @@ def show_env():
     print(evaluate(env, agent, n_games=1))
     env.close()
 
-    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(DEVICE)
+    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(
+        DEVICE
+    )
     target_network.load_state_dict(agent.state_dict())
 
 
@@ -481,7 +528,9 @@ def main():
         td_loss_fn=td_loss_dqn,
     )
 
-    final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000
+    )
     print(f"final score] {final_score}")
 
     # Animate learned policy
@@ -540,7 +589,9 @@ def main_noisy():
         td_loss_fn=td_loss_dqn,
     )
 
-    final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000
+    )
     print(f"final score(Noisy DQN): {final_score:.0f}")
 
 

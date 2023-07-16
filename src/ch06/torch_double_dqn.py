@@ -15,8 +15,7 @@ from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import (display_animation, generate_animation, make_env,
-                   torch_fix_seed)
+from utils import display_animation, generate_animation, make_env, torch_fix_seed
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed = 42
@@ -106,7 +105,13 @@ class ReplayBuffer:
         idxs = np.random.choice(len(self.buffer), batch_size)
         samples = [self.buffer[i] for i in idxs]
         states, actions, rewards, next_states, done_flags = list(zip(*samples))
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(done_flags)
+        return (
+            np.array(states),
+            np.array(actions),
+            np.array(rewards),
+            np.array(next_states),
+            np.array(done_flags),
+        )
 
 
 def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
@@ -128,13 +133,25 @@ def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
     return sum_rewards, s
 
 
-def td_loss_ddqn(agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device):
+def td_loss_ddqn(
+    agent,
+    target_network,
+    states,
+    actions,
+    rewards,
+    next_states,
+    done_flags,
+    gamma=0.99,
+    device=device,
+):
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=device, dtype=torch.float)
     actions = torch.tensor(np.array(actions), device=device, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=device, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=device, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=device, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags.astype("float32")), device=device, dtype=torch.float
+    )
 
     # get q-values for all actions in current states use agent network
     q_s = agent(states)
@@ -204,18 +221,30 @@ def train_agent(
 
     for step in trange(total_steps + 1):
         # reduce exploration as we progress
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # take timesteps_per_epoch and update experience replay buffer
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
 
         # loss = <compute TD loss>
         optimizer.zero_grad()
         loss = td_loss_fn(
-            agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=device
+            agent,
+            target_network,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            gamma=0.99,
+            device=device,
         )
 
         loss.backward()
@@ -231,7 +260,9 @@ def train_agent(
 
         if step % eval_freq == 0:
             # eval the agent
-            mean_rw_history.append(evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000))
+            mean_rw_history.append(
+                evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000)
+            )
 
             clear_output(True)
             print(f"buffer size = {len(exp_replay)}, epsilon = {agent.epsilon:.5f}")
@@ -313,7 +344,9 @@ def main():
         td_loss_fn=td_loss_ddqn,
     )
 
-    final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000
+    )
     print("final score: {:.0f}".format(final_score))
 
     if os.path.exists("./videos/"):
