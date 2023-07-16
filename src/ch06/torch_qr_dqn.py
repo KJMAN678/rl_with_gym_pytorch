@@ -245,6 +245,90 @@ def train_agent(
         plt.close()
 
 
+class QRDQN(nn.Module):
+    def __init__(self, state_shape, n_actions, N=51, epsilon=0):
+        super(QRDQN, self).__init__()
+        self.epsilon = epsilon
+        self.n_actions = n_actions
+        self.state_shape = state_shape
+        self.N = N
+
+        state_dim = state_shape[0]
+        # a simple NN with state_dim as input vector (inout is state s)
+        # and self.n_actions as output vector of logits of q(s, a)
+        self.fc1 = nn.Linear(state_dim, 64)
+        self.fc2 = nn.Linear(64, 128)
+        self.fc3 = nn.Linear(128, 32)
+        self.q = nn.Linear(32, n_actions * N)
+
+    def forward(self, state_t):
+        # pass the state at time t through the newrok to get Q(s,a)
+        x = F.relu(self.fc1(state_t))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        qvalues = self.q(x)
+        qvalues = qvalues.view(-1, self.n_actions, self.N)
+        return qvalues
+
+    def get_qvalues(self, states):
+        # input is an array of states in numpy and outout is Qvals as numpy array
+        states = torch.tensor(np.array(states), device=device, dtype=torch.float32)
+        qvalues = self.forward(states)
+        return qvalues.data.cpu().numpy()
+
+    def sample_actions(self, qvalues):
+        # sample actions from a batch of q_values using epsilon greedy policy
+        epsilon = self.epsilon
+        batch_size, n_actions, N = qvalues.shape
+        random_actions = np.random.choice(n_actions, size=batch_size)
+        best_actions = qvalues.mean(-1).argmax(-1)
+        should_explore = np.random.choice([0, 1], batch_size, p=[1 - epsilon, epsilon])
+        return np.where(should_explore, random_actions, best_actions)
+
+
+def loss_qr_dqn(agent, target_network, states, actions, rewards, done_flags, gamma=0.99, device=DEVICE):
+    # convert numpy array to torch tensors
+    states = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float)
+    actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
+    rewards = torch.tensor(np.array(rewards), device=DEVICE, dtype=torch.float)
+    next_states = torch.tensor(np.array(next_states), device=DEVICE, dtype=torch.float)
+    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float)
+
+    # get q-values for all actions in current states use agent network
+    q_s = agent(states)
+    batch_size, n_actions, N = q_s.shape
+
+    tau = torch.FloatTensor([i / N for i in range(1, N + 1)]).to(DEVICE)
+
+    # select q-values for chosen actions
+    q_s_a = q_s.gather(1, actions.unsqueeze(1).unsqueeze(1).expand(batch_size, 1, N))
+
+    with torch.no_grad():
+        # compute q-values for all actions in next states use target network
+        q_s1 = target_network(next_states)
+
+        # compute Qmax(next_states, actions) using predicted next q-values
+        s1_actions_max = torch.argmax(q_s1.mean(-1), dim=-1)
+        q_s1_amax = q_s1.gather(1, s1_actions_max.unsqueeze(1).unsqueeze(1).expand(batch_size, 1, N))
+        q_s1_amax = q_s1_amax.transpose(1, 2)
+
+        rewards = rewards.unsqueeze(-1).unsqueeze(-1).expand(batch_size, N, 1)
+        done_flags = done_flags.unsqueeze(-1).unsqueeze(-1).expand(batch_size, N, 1)
+
+        targets = rewards + gamma * (1 - done_flags) * q_s1_amax
+
+    td_errors = targets.detach() - q_s_a
+
+    k = 1.0
+
+    huber_loss = torch.where(td_error.abs() <= k, 0.5 * td_errors.pow(2), k * (td_errors.abs() - 0.5 * k))
+    quantile_loss = torch.abs(tau - (td_errors.detach() < 0).float()) * huber_loss
+
+    loss = quantile_loss.sum(-1).mean(-1).mean()
+
+    return loss
+
+
 def show_env():
     torch_fix_seed(42)
     env = make_env(ENV_NAME)
