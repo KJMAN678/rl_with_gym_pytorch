@@ -13,6 +13,8 @@ python3 src/ch06/torch_dueling_dqn.py
 python3 src/ch06/torch_noisy_nets_dqn.py
 
 python3 src/ch06/torch_c51_dqn.py
+
+python3 src/ch06/torch_qr_dqn.py
 ```
 
 # tkinter のランタイムエラー対策
