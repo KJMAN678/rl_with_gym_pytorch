@@ -101,7 +101,13 @@ class ReplayBuffer:
         idxs = np.random.choice(len(self.buffer), batch_size)
         samples = [self.buffer[i] for i in idxs]
         states, actions, rewards, next_states, done_flags = list(zip(*samples))
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(done_flags)
+        return (
+            np.array(states),
+            np.array(actions),
+            np.array(rewards),
+            np.array(next_states),
+            np.array(done_flags),
+        )
 
 
 def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
@@ -123,13 +129,25 @@ def play_and_record(start_state, agent, env, exp_replay, n_steps=1):
     return sum_rewards, s
 
 
-def td_loss_dqn(agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=DEVICE):
+def td_loss_dqn(
+    agent,
+    target_network,
+    states,
+    actions,
+    rewards,
+    next_states,
+    done_flags,
+    gamma=0.99,
+    device=DEVICE,
+):
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float)
     actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=DEVICE, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=DEVICE, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float
+    )
 
     # get q-values for all actions in current states
     # use agent network
@@ -196,18 +214,30 @@ def train_agent(
 
     for step in trange(total_steps + 1):
         # reduce exploration as we progress
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # take timesteps_per_epoch and update experience replay buffer
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
 
         # loss = <compute TD loss>
         optimizer.zero_grad()
         loss = td_loss_fn(
-            agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99, device=DEVICE
+            agent,
+            target_network,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            gamma=0.99,
+            device=DEVICE,
         )
 
         loss.backward()
@@ -223,7 +253,9 @@ def train_agent(
 
         if step % eval_freq == 0:
             # eval the agent
-            mean_rw_history.append(evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000))
+            mean_rw_history.append(
+                evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000)
+            )
 
         clear_output(True)
         print(f"buffer size = {len(exp_replay)}, epsilon = {agent.epsilon: .5f}")
@@ -272,7 +304,7 @@ class QRDQN(nn.Module):
 
     def get_qvalues(self, states):
         # input is an array of states in numpy and outout is Qvals as numpy array
-        states = torch.tensor(np.array(states), device=device, dtype=torch.float32)
+        states = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float32)
         qvalues = self.forward(states)
         return qvalues.data.cpu().numpy()
 
@@ -286,13 +318,25 @@ class QRDQN(nn.Module):
         return np.where(should_explore, random_actions, best_actions)
 
 
-def loss_qr_dqn(agent, target_network, states, actions, rewards, done_flags, gamma=0.99, device=DEVICE):
+def loss_qr_dqn(
+    agent,
+    target_network,
+    states,
+    actions,
+    rewards,
+    next_states,
+    done_flags,
+    gamma=0.99,
+    device=DEVICE,
+):
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float)
     actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=DEVICE, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=DEVICE, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float
+    )
 
     # get q-values for all actions in current states use agent network
     q_s = agent(states)
@@ -309,7 +353,9 @@ def loss_qr_dqn(agent, target_network, states, actions, rewards, done_flags, gam
 
         # compute Qmax(next_states, actions) using predicted next q-values
         s1_actions_max = torch.argmax(q_s1.mean(-1), dim=-1)
-        q_s1_amax = q_s1.gather(1, s1_actions_max.unsqueeze(1).unsqueeze(1).expand(batch_size, 1, N))
+        q_s1_amax = q_s1.gather(
+            1, s1_actions_max.unsqueeze(1).unsqueeze(1).expand(batch_size, 1, N)
+        )
         q_s1_amax = q_s1_amax.transpose(1, 2)
 
         rewards = rewards.unsqueeze(-1).unsqueeze(-1).expand(batch_size, N, 1)
@@ -321,12 +367,132 @@ def loss_qr_dqn(agent, target_network, states, actions, rewards, done_flags, gam
 
     k = 1.0
 
-    huber_loss = torch.where(td_error.abs() <= k, 0.5 * td_errors.pow(2), k * (td_errors.abs() - 0.5 * k))
+    huber_loss = torch.where(
+        td_errors.abs() <= k, 0.5 * td_errors.pow(2), k * (td_errors.abs() - 0.5 * k)
+    )
     quantile_loss = torch.abs(tau - (td_errors.detach() < 0).float()) * huber_loss
 
     loss = quantile_loss.sum(-1).mean(-1).mean()
 
     return loss
+
+
+def evaluate_qr_dqn(env, agent, n_games=1, greedy=False, t_max=10000):
+    rewards = []
+    for _ in range(n_games):
+        s = env.reset()[0]
+        reward = 0
+        for _ in range(t_max):
+            qvalues = agent.get_qvalues([s])
+            if greedy:
+                action = qvalues.mean(-1).argmax(axis=-1)[0]
+            else:
+                action = agent.sample_actions(qvalues)[0]
+            s, r, done, _, _ = env.step(action)
+            reward += r
+            if done:
+                break
+
+        rewards.append(reward)
+    return np.mean(rewards)
+
+
+def train_agent_qr_dqn(
+    env,
+    agent,
+    target_network,
+    optimizer,
+    total_steps,
+    start_epsilon,
+    end_epsilon,
+    eps_decay_final_step,
+    timesteps_per_epoch,
+    batch_size,
+    loss_freq,
+    refresh_target_network_freq,
+    eval_freq,
+    td_loss_fn,
+):
+    state = env.reset()[0]
+    # let us fill experience replay with some samples using full random policy
+    exp_replay = ReplayBuffer(10**4)
+    for i in range(100):
+        play_and_record(state, agent, env, exp_replay, n_steps=10**2)
+        if len(exp_replay) == 10**4:
+            break
+    print(f"Finished filling buffer with: {len(exp_replay)} samples")
+
+    mean_rw_history = []
+    td_loss_history = []
+    state = env.reset()[0]
+    for step in trange(total_steps + 1):
+        # reduce exploration as we progress
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
+
+        # take timesteps_per_epoch and update experience replay buffer
+        _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
+
+        # train by sampling batch_size of data from experience replay
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
+
+        # loss = <compute TD loss>
+        optimizer.zero_grad()
+        loss = td_loss_fn(
+            agent,
+            target_network,
+            states,
+            actions,
+            rewards,
+            next_states,
+            done_flags,
+            gamma=0.99,
+            device=DEVICE,
+        )
+
+        loss.backward()
+        optimizer.step()
+
+        if step % loss_freq == 0:
+            td_loss_history.append(loss.data.cpu().item())
+
+        if step % refresh_target_network_freq == 0:
+            # Load agent weights into target_network
+            for target_param, agent_param in zip(
+                target_network.parameters(), agent.parameters()
+            ):
+                target_param.data.copy_(
+                    0.001 * agent_param.data + (1.0 - 0.001) * target_param.data
+                )
+
+        if step % eval_freq == 0:
+            # eval the agent
+            mean_rw_history.append(
+                evaluate_qr_dqn(
+                    make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000
+                )
+            )
+
+        clear_output(True)
+        print(f"buffer size = {len(exp_replay)}, epsilon = {agent.epsilon}")
+
+        plt.figure(figsize=[16, 5])
+        plt.subplot(1, 2, 1)
+        plt.title("Mean reward per episode")
+        plt.plot(mean_rw_history)
+        plt.grid()
+
+        assert not np.isnan(td_loss_history[-1])
+        plt.subplot(1, 2, 2)
+        plt.title("TD loss history (smoothened)")
+        plt.plot(smoothen(td_loss_history))
+        plt.grid()
+        plt.show(block=False)
+        plt.pause(2)
+        plt.close()
 
 
 def show_env():
@@ -344,7 +510,9 @@ def show_env():
 
     env.close()
 
-    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(DEVICE)
+    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(
+        DEVICE
+    )
     target_network.load_state_dict(agent.state_dict())
 
 
@@ -385,14 +553,15 @@ def main():
         eps_decay_final_step,
         timesteps_per_epoch,
         batch_size,
-        max_grad_norm,
         loss_freq,
         refresh_target_network_freq,
         eval_freq,
         td_loss_fn=td_loss_dqn,
     )
 
-    final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000
+    )
     print(f"final score: {final_score:.0f}")
 
     if os.path.exists("./videos/"):
@@ -406,6 +575,54 @@ def main():
     env.close()
 
 
+def main_quantile_regression():
+    torch_fix_seed(42)
+
+    timesteps_per_epoch = 1
+    batch_size = 32
+    total_steps = 2 * 10**4
+
+    start_epsilon = 1
+    end_epsilon = 0.05
+    eps_decay_final_step = 2 * 10**4
+
+    loss_freq = 50
+    refresh_target_network_freq = 1
+    eval_freq = 1000
+
+    env = make_env(ENV_NAME)
+    state_dim = env.observation_space.shape
+    n_actions = env.action_space.n
+
+    agent = QRDQN(state_dim, n_actions, epsilon=1).to(DEVICE)
+    target_network = QRDQN(state_dim, n_actions, epsilon=1).to(DEVICE)
+    target_network.load_state_dict(agent.state_dict())
+    optimizer = optim.Adam(agent.parameters(), lr=1e-4)
+
+    train_agent_qr_dqn(
+        env,
+        agent,
+        target_network,
+        optimizer,
+        total_steps,
+        start_epsilon,
+        end_epsilon,
+        eps_decay_final_step,
+        timesteps_per_epoch,
+        batch_size,
+        loss_freq,
+        refresh_target_network_freq,
+        eval_freq,
+        td_loss_fn=loss_qr_dqn,
+    )
+
+    final_score = evaluate_qr_dqn(
+        make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000
+    )
+    print(f"final score: {final_score:.0f}")
+
+
 if __name__ == "__main__":
     show_env()
     main()
+    main_quantile_regression()

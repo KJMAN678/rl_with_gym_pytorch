@@ -144,7 +144,9 @@ def td_loss_dqn(
     actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=DEVICE, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=DEVICE, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags).astype("float32"), device=DEVICE, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags).astype("float32"), device=DEVICE, dtype=torch.float
+    )
 
     # get q-values for all actions in current states use agent network
     q_s = agent(states)
@@ -209,13 +211,17 @@ def train_agent(
     state = env.reset()[0]
     for step in trange(total_steps + 1):
         # reduce exploration as we progress
-        agent.epsilon = epsilon_schedule(start_epsilon, end_epsilon, step, eps_decay_final_step)
+        agent.epsilon = epsilon_schedule(
+            start_epsilon, end_epsilon, step, eps_decay_final_step
+        )
 
         # take timesteps_per_epoch and update experience replay buffer
         _, state = play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
 
         # train by sampling batch_size of data from experience replay
-        states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+        states, actions, rewards, next_states, done_flags = exp_replay.sample(
+            batch_size
+        )
 
         # loss = <compute TD loss>
         optimizer.zero_grad()
@@ -244,7 +250,9 @@ def train_agent(
 
         if step % eval_freq == 0:
             # eval the agent
-            mean_rw_history.append(evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000))
+            mean_rw_history.append(
+                evaluate(make_env(ENV_NAME), agent, n_games=3, greedy=True, t_max=1000)
+            )
 
             clear_output(True)
             print(f"buffer size = {len(exp_replay)}, epsilon = {agent.epsilon:.5f}")
@@ -267,7 +275,9 @@ def train_agent(
 
 
 class CategoricalDQN(nn.Module):
-    def __init__(self, state_shape, n_actions, n_atoms=51, Vmin=-10, Vmax=10, epsilon=0):
+    def __init__(
+        self, state_shape, n_actions, n_atoms=51, Vmin=-10, Vmax=10, epsilon=0
+    ):
         super(CategoricalDQN, self).__init__()
         self.epsilon = epsilon
         self.n_actions = n_actions
@@ -316,7 +326,9 @@ class CategoricalDQN(nn.Module):
         return np.where(should_explore, random_actions, best_actions)
 
 
-def compute_projection(model, next_states, rewards, done_flags, gamma=0.99, n_atoms=51, Vmin=-10, Vmax=10):
+def compute_projection(
+    model, next_states, rewards, done_flags, gamma=0.99, n_atoms=51, Vmin=-10, Vmax=10
+):
     batch_size = next_states.size()[0]
 
     d_z = (Vmax - Vmin) / (n_atoms - 1)
@@ -324,7 +336,9 @@ def compute_projection(model, next_states, rewards, done_flags, gamma=0.99, n_at
     probs = model(next_states)
     qvals = support * probs
     best_actions = qvals.sum(-1).argmax(-1)
-    best_actions = best_actions.unsqueeze(1).unsqueeze(1).expand(probs.size(0), 1, probs.size(2))
+    best_actions = (
+        best_actions.unsqueeze(1).unsqueeze(1).expand(probs.size(0), 1, probs.size(2))
+    )
     best_qvals = qvals.gather(1, best_actions).squeeze(1)
 
     rewards = rewards.unsqueeze(1).expand_as(best_qvals)
@@ -339,11 +353,20 @@ def compute_projection(model, next_states, rewards, done_flags, gamma=0.99, n_at
 
     projected_dist = torch.zeros(best_qvals.size())
 
-    offset = torch.linspace(0, (batch_size - 1) * n_atoms, batch_size).long().unsqueeze(1).expand(batch_size, n_atoms)
+    offset = (
+        torch.linspace(0, (batch_size - 1) * n_atoms, batch_size)
+        .long()
+        .unsqueeze(1)
+        .expand(batch_size, n_atoms)
+    )
 
     proj_dist = torch.zeros(best_qvals.size())
-    proj_dist.view(-1).index_add_(0, (l + offset).view(-1), (best_qvals * (u.float() - b)).view(-1))
-    proj_dist.view(-1).index_add_(0, (u + offset).view(-1), (best_qvals * (b - l.float())).view(-1))
+    proj_dist.view(-1).index_add_(
+        0, (l + offset).view(-1), (best_qvals * (u.float() - b)).view(-1)
+    )
+    proj_dist.view(-1).index_add_(
+        0, (u + offset).view(-1), (best_qvals * (b - l.float())).view(-1)
+    )
 
     return proj_dist
 
@@ -364,7 +387,9 @@ def td_loss_categorical_dqn(
     actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=DEVICE, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=DEVICE, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags).astype("float32"), device=DEVICE, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags).astype("float32"), device=DEVICE, dtype=torch.float
+    )
 
     dist = agent(states)
     batch_size, n_actions, n_atoms = dist.size()
@@ -373,7 +398,9 @@ def td_loss_categorical_dqn(
     dist.clamp(0.01, 0.99)
 
     with torch.no_grad():
-        proj_dist = compute_projection(target_network, next_states, rewards, done_flags, gamma)
+        proj_dist = compute_projection(
+            target_network, next_states, rewards, done_flags, gamma
+        )
 
     loss = -(proj_dist * dist.log()).sum(1).mean()
 
@@ -394,7 +421,9 @@ def show_env():
     agent = DQNAgent(state_shape, n_actions, epsilon=0.5).to(DEVICE)
     print(evaluate(env, agent, n_games=1))
 
-    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(DEVICE)
+    target_network = DQNAgent(agent.state_shape, agent.n_actions, epsilon=0.5).to(
+        DEVICE
+    )
     target_network.load_state_dict(agent.state_dict())
 
     env.close()
@@ -444,7 +473,9 @@ def main():
         td_loss_fn=td_loss_dqn,
     )
 
-    final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000
+    )
     print(f"final score: {final_score}")
 
     if os.path.exists("./videos/"):
@@ -502,7 +533,9 @@ def main_categorical():
         td_loss_fn=td_loss_categorical_dqn,
     )
 
-    final_score = evaluate(make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000)
+    final_score = evaluate(
+        make_env(ENV_NAME), agent, n_games=30, greedy=True, t_max=1000
+    )
     print(f"final score(C51 DQN): {final_score}")
 
 
