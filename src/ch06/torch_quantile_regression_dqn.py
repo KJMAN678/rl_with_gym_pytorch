@@ -15,7 +15,8 @@ from tqdm import trange
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import display_animation, generate_animation, make_env, torch_fix_seed
+from utils import (display_animation, generate_animation, make_env,
+                   torch_fix_seed)
 
 ENV_NAME = "CartPole-v1"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
