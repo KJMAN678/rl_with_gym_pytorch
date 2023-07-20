@@ -22,3 +22,4 @@ autorom==0.4.2
 ale_py==0.8.1
 shimmy==0.2.1
 ipython==8.14.0
+nptyping==2.5.0
