@@ -113,6 +113,8 @@ def train_one_episode(states, actions, rewards, model, optimizer, gamma=0.99, en
     loss = -(J + entropy_coef * H)
 
     optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
     return np.sum(rewards)
 
@@ -130,6 +132,8 @@ def generate_animation(env, n_actions, model, save_dir):
 
 
 def main():
+    torch_fix_seed(42)
+
     env = make_env(ENV_NAME)
     env.reset()
     plt.imshow(env.render())
@@ -138,7 +142,7 @@ def main():
     plt.close()
     state_shape, n_actions = env.observation_space.shape, env.action_space.n
     state_dim = state_shape[0]
-    # env.close()
+    env.close()
 
     model = ActorCritic(state_dim, n_actions)
     model = model.to(DEVICE)
@@ -152,6 +156,7 @@ def main():
         total_rewards.append(reward)
         if i != 0 and i % 100 == 0:
             mean_reward = np.mean(total_rewards[-100:-1])
+            print(f"mean rewards:{mean_reward:.3f}")
             if mean_reward > 700:
                 break
     env.close()
