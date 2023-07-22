@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from gymnasium.wrappers import RecordVideo
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
-
 # from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines3.ppo.policies import MlpPolicy
 

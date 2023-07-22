@@ -88,14 +88,18 @@ def get_rewards_to_go(rewards, gamma=0.99):
     return rewards_to_go
 
 
-def train_one_episode(states, actions, rewards, model, optimizer, gamma=0.99, entropy_coef=1e-2):
+def train_one_episode(
+    states, actions, rewards, model, optimizer, gamma=0.99, entropy_coef=1e-2
+):
     # get rewards to go
     rewards_to_go = get_rewards_to_go(rewards, gamma)
 
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float)
     actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
-    rewards_to_go = torch.tensor(np.array(rewards_to_go), device=DEVICE, dtype=torch.float)
+    rewards_to_go = torch.tensor(
+        np.array(rewards_to_go), device=DEVICE, dtype=torch.float
+    )
 
     # get action probabilities from states
     logits, state_values = model(states)

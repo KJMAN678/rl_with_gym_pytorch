@@ -67,7 +67,9 @@ def td_loss_dqn(
     actions = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
     rewards = torch.tensor(np.array(rewards), device=DEVICE, dtype=torch.float)
     next_states = torch.tensor(np.array(next_states), device=DEVICE, dtype=torch.float)
-    done_flags = torch.tensor(np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float)
+    done_flags = torch.tensor(
+        np.array(done_flags.astype("float32")), device=DEVICE, dtype=torch.float
+    )
 
     # get q-values for all actions in current states use agent network
     q_s = agent(states)
@@ -179,10 +181,13 @@ def train_her(
     for epoch in range(num_epochs):
         # Decay epsilon linearly from eps_max to eps_min
         eps = max(
-            eps_max - epoch * (eps_max - eps_min) / int(num_epochs * exploration_fraction),
+            eps_max
+            - epoch * (eps_max - eps_min) / int(num_epochs * exploration_fraction),
             eps_min,
         )
-        print(f"Epoch: {epoch + 1}, exploration: {100 * eps: .0f}%, success rate: {success_rate: .2f}")
+        print(
+            f"Epoch: {epoch + 1}, exploration: {100 * eps: .0f}%, success rate: {success_rate: .2f}"
+        )
         agent.epsilon = eps
         target_network.epsilon = eps
 
@@ -210,7 +215,9 @@ def train_her(
                 for t in range(steps_taken):
                     # Usual experience replay
                     state, action, reward, next_state, done = episode_trajectory[t]
-                    state_, next_state_ = np.concatenate((state, goal)), np.concatenate((next_state, goal))
+                    state_, next_state_ = np.concatenate((state, goal)), np.concatenate(
+                        (next_state, goal)
+                    )
                     exp_replay.add(state_, action, reward, next_state_, done)
 
                     # Hindsight experience replay
@@ -218,13 +225,19 @@ def train_her(
                         future = random.randint(t, steps_taken)
                         new_goal = episode_trajectory[future][3]
                         new_reward, new_done = env.compute_reward(next_state, new_goal)
-                        state_, next_state_ = np.concatenate((state, new_goal)), np.concatenate((next_state, new_goal))
-                        exp_replay.add(state_, action, new_reward, next_state_, new_done)
+                        state_, next_state_ = np.concatenate(
+                            (state, new_goal)
+                        ), np.concatenate((next_state, new_goal))
+                        exp_replay.add(
+                            state_, action, new_reward, next_state_, new_done
+                        )
 
             # Optimize DQN
             for opt_step in range(num_opt_steps):
                 # train by sampling batch_size of data from experience replay
-                states, actions, rewards, next_states, done_flags = exp_replay.sample(batch_size)
+                states, actions, rewards, next_states, done_flags = exp_replay.sample(
+                    batch_size
+                )
                 # loss = <compute TD loss>
                 optimizer.zero_grad()
                 loss = td_loss_fn(

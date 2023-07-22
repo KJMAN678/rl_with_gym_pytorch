@@ -27,7 +27,9 @@ def predict_probs(states: NDArray, model: Sequential):
     params: states: [batch, state_dim]
     returns: probs: [batch, n_actions]
     """
-    states_tensor: torch.Tensor = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float32)
+    states_tensor: torch.Tensor = torch.tensor(
+        np.array(states), device=DEVICE, dtype=torch.float32
+    )
     with torch.no_grad():
         logits = model(states_tensor)
     probs = nn.functional.softmax(logits, -1).detach().numpy()
@@ -35,7 +37,10 @@ def predict_probs(states: NDArray, model: Sequential):
 
 
 def generate_trajectory(
-    env: Any[CartPoleEnv, RecordVideo], model: Sequential, n_actions: np.int64, n_steps: int = 1000
+    env: Any[CartPoleEnv, RecordVideo],
+    model: Sequential,
+    n_actions: np.int64,
+    n_steps: int = 1000,
 ) -> Tuple[list, list, list]:
     """
     Play a session and genrate a trajectory
@@ -90,9 +95,15 @@ def train_one_episode(
     rewards_to_go = get_rewards_to_go(rewards, gamma)
 
     # onvert numpy array to torch tensors
-    states_tensor: torch.Tensor = torch.tensor(np.array(states), device=DEVICE, dtype=torch.float)
-    actions_tensor: torch.Tensor = torch.tensor(np.array(actions), device=DEVICE, dtype=torch.long)
-    rewards_to_go_tensor: torch.Tensor = torch.tensor(np.array(rewards_to_go), device=DEVICE, dtype=torch.float)
+    states_tensor: torch.Tensor = torch.tensor(
+        np.array(states), device=DEVICE, dtype=torch.float
+    )
+    actions_tensor: torch.Tensor = torch.tensor(
+        np.array(actions), device=DEVICE, dtype=torch.long
+    )
+    rewards_to_go_tensor: torch.Tensor = torch.tensor(
+        np.array(rewards_to_go), device=DEVICE, dtype=torch.float
+    )
 
     # get action probabilities from states
     logits = model(states_tensor)
@@ -114,10 +125,14 @@ def train_one_episode(
     return np.sum(rewards)
 
 
-def generate_animation(env: CartPoleEnv, model: Sequential, n_actions: np.int64, save_dir: str):
+def generate_animation(
+    env: CartPoleEnv, model: Sequential, n_actions: np.int64, save_dir: str
+):
     try:
         # env = RecordVideo(env, save_dir, episode_trigger=lambda id: True)
-        env_rec: RecordVideo = RecordVideo(env, save_dir, episode_trigger=lambda id: True)
+        env_rec: RecordVideo = RecordVideo(
+            env, save_dir, episode_trigger=lambda id: True
+        )
     except gym.error.Error as e:
         print(e)
 
