@@ -24,3 +24,4 @@ shimmy==0.2.1
 ipython==8.14.0
 nptyping==2.5.0
 stable-baselines3==2.0.0
+box2d-py-2.3.8

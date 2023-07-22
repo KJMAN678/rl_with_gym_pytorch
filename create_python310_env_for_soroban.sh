@@ -40,3 +40,6 @@ sudo apt install libcudnn8 libcudnn8-dev libnccl-dev libnccl2
 
 # for cv2
 sudo apt-get install libglib2.0-0 -y
+
+# for box2d
+sudo apt install swig

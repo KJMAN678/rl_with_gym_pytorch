@@ -7,5 +7,7 @@ __pycache__/
 src/ch05/MNIST_data
 src/ch06/*.png
 videos/
+videos_1/
+videos_2/
 images/
 COMMAND.md
