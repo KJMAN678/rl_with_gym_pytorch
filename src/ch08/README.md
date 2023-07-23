@@ -1,5 +1,7 @@
 ```sh
 python src/ch08/torch_deep_deterministic_policy_gradient.py
+
+python src/ch08/torch_twin_delayed_deep_deterministic_policy_gradient.py
 ```
 
 box2d-py のインストールには下記の実行が必要
