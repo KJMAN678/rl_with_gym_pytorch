@@ -11,3 +11,4 @@ videos_1/
 videos_2/
 images/
 COMMAND.md
+.mypy_cache/
