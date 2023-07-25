@@ -108,7 +108,9 @@ class ReplayBuffer:
         )
 
 
-def compute_q_loss(agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99):
+def compute_q_loss(
+    agent, target_network, states, actions, rewards, next_states, done_flags, gamma=0.99
+):
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), dtype=torch.float)
     actions = torch.tensor(np.array(actions), dtype=torch.float)
@@ -121,7 +123,9 @@ def compute_q_loss(agent, target_network, states, actions, rewards, next_states,
 
     # Bellman backup for Q function
     with torch.no_grad():
-        q_next_state_values = target_network.q(next_states, target_network.policy(next_states))
+        q_next_state_values = target_network.q(
+            next_states, target_network.policy(next_states)
+        )
         target = rewards + gamma * (1 - done_flags) * q_next_state_values
 
     # MSE loss against Bellman backup
@@ -156,7 +160,9 @@ def one_step_update(
 ):
     # one step gradient for q-values
     q_optimizer.zero_grad()
-    loss_q = compute_q_loss(agent, target_network, states, actions, rewards, next_states, done_flags, gamma)
+    loss_q = compute_q_loss(
+        agent, target_network, states, actions, rewards, next_states, done_flags, gamma
+    )
     loss_q.backward()
     q_optimizer.step()
 
@@ -176,7 +182,9 @@ def one_step_update(
 
     # update target networks with polyak averaging
     with torch.no_grad():
-        for params, params_target in zip(agent.parameters(), target_network.parameters()):
+        for params, params_target in zip(
+            agent.parameters(), target_network.parameters()
+        ):
             params_target.data.mul_(polyak)
             params_target.data.add_((1 - polyak) * params.data)
 
@@ -299,11 +307,15 @@ def ddpg(
         if (t + 1) % steps_per_epoch == 0:
             epoch = (t + 1) // steps_per_epoch
 
-            avg_ret, avg_len = test_agent(test_env, agent, num_test_episodes, max_ep_len)
+            avg_ret, avg_len = test_agent(
+                test_env, agent, num_test_episodes, max_ep_len
+            )
             print(
                 f"End of epoch: {epoch:.0f}, Training Average Reward: {np.mean(ep_rets):.0f}, Training Average Length: {np.mean(ep_lens):.0f}"
             )
-            print(f"End of epoch: {epoch:.0f}, Test Average Reward: {avg_ret:.0f}, Test Average Length: {avg_len:.0f}")
+            print(
+                f"End of epoch: {epoch:.0f}, Test Average Reward: {avg_ret:.0f}, Test Average Length: {avg_len:.0f}"
+            )
             ep_rets, ep_lens = [], []
 
     return agent
