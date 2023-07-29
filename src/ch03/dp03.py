@@ -1,13 +1,14 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt  # type:ignore
+import numpy as np
+import seaborn as sns  # type:ignore
+from nptyping import NDArray
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-
-from ..gridworld import GridworldEnv
+from gridworld import GridworldEnv  # type:ignore
 
 
 def grid_print(V, k=None):

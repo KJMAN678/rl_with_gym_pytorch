@@ -1,16 +1,17 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt  # type:ignore
+import numpy as np
+import seaborn as sns  # type:ignore
+from nptyping import NDArray
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-
-from ..gridworld import GridworldEnv
+from gridworld import GridworldEnv  # type:ignore
 
 
-def grid_print(V, k=None):
+def grid_print(V: NDArray, k: int | None = None) -> None:
     ax = sns.heatmap(
         V.reshape(env.shape),
         annot=True,
@@ -30,7 +31,9 @@ def grid_print(V, k=None):
     plt.close()
 
 
-def policy_evaluation(policy, env, discount_factor=1.0, theta=0.00001):
+def policy_evaluation(
+    policy: NDArray, env: GridworldEnv, discount_factor: float = 1.0, theta: float = 0.00001
+) -> NDArray:
     """
     環境を与えられた方策を評価し 環境のダイナミクスを完全に説明する。
 
@@ -72,7 +75,9 @@ def policy_evaluation(policy, env, discount_factor=1.0, theta=0.00001):
     return np.array(V)
 
 
-def policy_improvement(policy, V, env, discount_factor=1.0):
+def policy_improvement(
+    policy: NDArray, V: NDArray, env: GridworldEnv, discount_factor: float = 1.0
+) -> tuple[NDArray, bool]:
     """
     環境と、環境のダイナミクスと状態値Vの完全な記述を与えられたポリシーを改善する。
 
@@ -90,7 +95,7 @@ def policy_improvement(policy, V, env, discount_factor=1.0):
         policy_changed: 方策に変更があった場合に `True` の値を持つ boolean値。
     """
 
-    def argmax_a(arr):
+    def argmax_a(arr: NDArray) -> list:
         """
         各配列の最大値のインデックスを返す
         """
@@ -126,7 +131,7 @@ def policy_improvement(policy, V, env, discount_factor=1.0):
     return new_policy, policy_changed
 
 
-def policy_iteration(env, discount_factor=1.0, theta=0.00001):
+def policy_iteration(env: GridworldEnv, discount_factor: float = 1.0, theta: float = 0.00001):
     # ランダムな方策で初期化
     policy = np.ones([env.nS, env.nA]) / env.nA
     while True:

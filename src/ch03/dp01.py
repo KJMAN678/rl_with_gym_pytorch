@@ -1,16 +1,17 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt  # type:ignore
+import numpy as np
+import seaborn as sns  # type:ignore
+from nptyping import NDArray
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-
-from gridworld import GridworldEnv
+from gridworld import GridworldEnv  # type:ignore
 
 
-def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
+def policy_eval(policy: NDArray, env: GridworldEnv, discount_factor: float = 1.0, theta: float = 0.00001) -> NDArray:
     """
     環境を与えられた方策を評価する。
 
@@ -53,7 +54,7 @@ def policy_eval(policy, env, discount_factor=1.0, theta=0.00001):
     return np.array(V)
 
 
-def grid_print(V, k=None):
+def grid_print(V: NDArray, k: int | None = None) -> None:
     ax = sns.heatmap(
         V.reshape(env.shape),
         annot=True,
@@ -70,7 +71,9 @@ def grid_print(V, k=None):
     plt.close()
 
 
-def policy_eval_withprint(policy, env, discount_factor=1.0, theta=0.00001, print_at=[]):
+def policy_eval_withprint(
+    policy: NDArray, env: GridworldEnv, discount_factor: float = 1.0, theta: float = 0.00001, print_at: list = []
+) -> NDArray:
     """
         環境を与えられた政策を評価し 環境のダイナミクスを完全に記述する。
 
