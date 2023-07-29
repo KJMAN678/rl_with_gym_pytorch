@@ -132,10 +132,8 @@ def print_policy(env, agent):
 
 def main():
     # create cliff world environment
-    # env = gym.envs.toy_text.CliffWalkingEnv()
     env = gym.envs.toy_text.CliffWalkingEnv()
     print(env.__doc__)
-    # env.reset()
 
     # create a Dyna-Q Learning agent
     agent = DynaQAgent(
@@ -154,11 +152,9 @@ def main():
 
     # print policy
     print_policy(env, agent)
-    # env.close()
 
     # create taxi environment
     env = gym.make("Taxi-v3")
-    # env.reset()
 
     # create a Q Learning agent
     agent = DynaQAgent(
@@ -174,7 +170,6 @@ def main():
 
     # plot reward graph
     plot_rewards("Taxi", rewards, "Dyna Q Learning")
-    # env.close()
 
 
 if __name__ == "__main__":
